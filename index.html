@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Eeron Dashboard</title>
+<meta charset="utf-8">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js" integrity="sha512-bZS47S7sPOxkjU/4Bt0zrhEtWx0y0CRkhEp8IckzK+ltifIIE9EMIMTuT/mEzoIMewUINruDBIR/jJnbguonqQ==" crossorigin="anonymous"></script>
+
+<style>
+#video, #img {
+    display: none;
+    height: 100vh
+}
+</style>
+</head>
+<body>
+<video muted autoplay=1 id="video">
+<source src="" type="">
+</video>
+<img id="img">
+</img>
+<script>
+var nextMedia;
+function fetchNext(skiptimeout) {
+    axios.get('http://localhost:5000/get_image')
+        .then(resp => {
+            nextMedia = resp.data
+            if (skiptimeout != undefined) {
+                setNext()
+            } else {
+                setTimeout(setNext, 5000)
+            }
+        })
+}
+
+function setNext() {
+    if (nextMedia.mimeType.startsWith('video')) {
+        document.getElementById('img').style.display = 'none'
+        document.getElementById('video').style.display = 'inline'
+        document.getElementById('video').firstElementChild.setAttribute('src', nextMedia.baseUrl + "=dv")
+        document.getElementById('video').firstElementChild.setAttribute('type', nextMedia.mimeType)
+        document.getElementById('video').load()
+    } else {
+        document.getElementById('img').style.display = 'inline'
+        document.getElementById('video').style.display = 'none'
+        document.getElementById('img').setAttribute('src', nextMedia.baseUrl)
+    }
+    fetchNext()
+
+}
+fetchNext()
+</script>
+</body>
+</html>
