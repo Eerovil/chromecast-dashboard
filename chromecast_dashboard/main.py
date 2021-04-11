@@ -1,7 +1,7 @@
 # coding: utf-8
 import os
 import json
-from flask import Flask, flash, request, redirect
+from flask import Flask, flash, request, redirect, send_from_directory
 import requests
 import random
 
@@ -18,6 +18,11 @@ with open('config.json', 'r') as config_file:
     app.config.update(json.load(config_file))
 creds = None
 albums = []
+
+
+@app.route('/', methods=['GET'])
+def index():
+    return send_from_directory('.', 'index.html')
 
 
 @app.route('/get_image', methods=['GET'])
@@ -38,9 +43,11 @@ def randomize_image():
     """
     total_media_count = 0
     for album in albums:
-        total_media_count += int(album["mediaItemsCount"])
+        total_media_count += int(album["mediaItemsCount"]) - 1
     
-    total_media_count = 200
+    # total_media_count = 200
+    if len(albums[0]['cached_media_items']) == 0:
+        total_media_count = 100
     
     random_index = random.randint(0, total_media_count)
 
@@ -134,4 +141,4 @@ def fetch_media_item(album, index=0):
 if __name__ == '__main__':
     init_oauth()
     get_all_albums()
-    app.run(host="0.0.0.0")
+    app.run(host="0.0.0.0", port="5010")

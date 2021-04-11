@@ -13,20 +13,34 @@
 </style>
 </head>
 <body>
-<video muted autoplay=1 id="video">
+<video muted id="video">
 <source src="" type="">
 </video>
 <img id="img">
 </img>
 <script>
 var nextMedia;
+function buildFullUrl(mediaItem) {
+    return mediaItem.baseUrl + "=w2048-h1024";
+}
+function preloadMediaItem(mediaItem) {
+    if (mediaItem.mimeType.indexOf('image/') === 0) {
+        (new Image()).src = buildFullUrl(mediaItem);
+    } else if (mediaItem.mimeType.indexOf('video/') === 0) {
+        document.getElementById('video').firstElementChild.setAttribute('src', nextMedia.baseUrl + "=dv")
+        document.getElementById('video').firstElementChild.setAttribute('type', nextMedia.mimeType)
+        document.getElementById('video').load()
+    }
+}
+
 function fetchNext(skiptimeout) {
-    axios.get('http://localhost:5000/get_image')
+    axios.get('http://localhost:5010/get_image')
         .then(resp => {
             nextMedia = resp.data
             if (skiptimeout != undefined) {
                 setNext()
             } else {
+                preloadMediaItem(nextMedia)
                 setTimeout(setNext, 5000)
             }
         })
@@ -36,9 +50,7 @@ function setNext() {
     if (nextMedia.mimeType.startsWith('video')) {
         document.getElementById('img').style.display = 'none'
         document.getElementById('video').style.display = 'inline'
-        document.getElementById('video').firstElementChild.setAttribute('src', nextMedia.baseUrl + "=dv")
-        document.getElementById('video').firstElementChild.setAttribute('type', nextMedia.mimeType)
-        document.getElementById('video').load()
+        document.getElementById('video').play()
     } else {
         document.getElementById('img').style.display = 'inline'
         document.getElementById('video').style.display = 'none'
