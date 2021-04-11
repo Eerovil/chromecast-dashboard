@@ -13,7 +13,7 @@
 </style>
 </head>
 <body>
-<video muted id="video">
+<video muted loop id="video">
 <source src="" type="">
 </video>
 <img id="img">
@@ -41,7 +41,7 @@ function fetchNext(skiptimeout) {
                 setNext()
             } else {
                 preloadMediaItem(nextMedia)
-                setTimeout(setNext, 5000)
+                setTimeout(setNext, 10000)
             }
         })
 }
