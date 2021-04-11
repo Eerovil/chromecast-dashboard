@@ -34,7 +34,7 @@ function preloadMediaItem(mediaItem) {
 }
 
 function fetchNext(skiptimeout) {
-    axios.get('http://localhost:5010/get_image')
+    axios.get('/get_image')
         .then(resp => {
             nextMedia = resp.data
             if (skiptimeout != undefined) {
