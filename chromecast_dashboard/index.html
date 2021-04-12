@@ -6,60 +6,135 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js" integrity="sha512-bZS47S7sPOxkjU/4Bt0zrhEtWx0y0CRkhEp8IckzK+ltifIIE9EMIMTuT/mEzoIMewUINruDBIR/jJnbguonqQ==" crossorigin="anonymous"></script>
 
 <style>
-#video, #img {
+.video-1, .video-2, .img {
     display: none;
-    height: 100vh
+    height: 100%
+}
+#left, #right {
+    position: absolute;
+    height: 100vh;
+    width: 50vw;
+    top: 0;
+}
+#left {
+    left: 0;
+}
+#right {
+    right: 0;
+}
+#right * {
+    float: right
 }
 </style>
 </head>
 <body>
-<video muted loop id="video">
-<source src="" type="">
-</video>
-<img id="img">
-</img>
+<div id="left">
+    <video class="video-1" muted loop>
+    <source src="" type="">
+    </video>
+    <video class="video-2" muted loop>
+    <source src="" type="">
+    </video>
+    <img class="img">
+    </img>
+</div>
+<div id="right">
+    <video class="video-1" muted loop>
+    <source src="" type="">
+    </video>
+    <video class="video-2" muted loop>
+    <source src="" type="">
+    </video>
+    <img class="img">
+    </img>
+</div>
 <script>
+var changeSecs = 10;
 var nextMedia;
+var turn = 'left';  // Which image/video will change
+var boxes = [
+    {
+        id: "left",
+        currMedia: null,
+        nextMedia: null,
+        offset: 0,
+        videoIndex: "video-1",
+        prevChange: null,  // Last changed
+    },
+    {
+        id: "right",
+        currMedia: null,
+        nextMedia: null,
+        videoIndex: "video-1",
+        prevChange: null,  // Last changed
+    },
+]
 function buildFullUrl(mediaItem) {
     return mediaItem.baseUrl + "=w2048-h1024";
 }
-function preloadMediaItem(mediaItem) {
-    if (mediaItem.mimeType.indexOf('image/') === 0) {
-        (new Image()).src = buildFullUrl(mediaItem);
-    } else if (mediaItem.mimeType.indexOf('video/') === 0) {
-        document.getElementById('video').firstElementChild.setAttribute('src', nextMedia.baseUrl + "=dv")
-        document.getElementById('video').firstElementChild.setAttribute('type', nextMedia.mimeType)
-        document.getElementById('video').load()
+function preloadMediaItem(box) {
+    if (box.nextMedia.mimeType.indexOf('image/') === 0) {
+        (new Image()).src = buildFullUrl(box.nextMedia);
+    } else if (box.nextMedia.mimeType.indexOf('video/') === 0) {
+        // Load video in background
+        const nextVideoIndex = (box.videoIndex == "video-1") ? "video-2" : "video-1";
+        const nextVideoEl = document.querySelector("#" + box.id + " ." + nextVideoIndex)
+        nextVideoEl.firstElementChild.setAttribute('src', box.nextMedia.baseUrl + "=dv")
+        nextVideoEl.setAttribute('type', box.nextMedia.mimeType)
+        nextVideoEl.load()
     }
 }
 
-function fetchNext(skiptimeout) {
+function fetchNext(box) {
     axios.get('/get_image')
         .then(resp => {
-            nextMedia = resp.data
-            if (skiptimeout != undefined) {
-                setNext()
-            } else {
-                preloadMediaItem(nextMedia)
-                setTimeout(setNext, 10000)
-            }
+            box.nextMedia = resp.data
+            preloadMediaItem(box)
         })
 }
 
-function setNext() {
-    if (nextMedia.mimeType.startsWith('video')) {
-        document.getElementById('img').style.display = 'none'
-        document.getElementById('video').style.display = 'inline'
-        document.getElementById('video').play()
-    } else {
-        document.getElementById('img').style.display = 'inline'
-        document.getElementById('video').style.display = 'none'
-        document.getElementById('img').setAttribute('src', nextMedia.baseUrl)
+function mainLoop() {
+    for (let box of boxes) {
+        const now = new Date();
+        const elapsed = box.prevChange == null ? null : ((now.getTime() - box.prevChange.getTime()) / 1000.0)
+        let shouldChange = (box.prevChange == null || elapsed > changeSecs)
+        if (box.currMedia && box.currMedia.mimeType.indexOf('video/') === 0) {
+            let videoEl = document.querySelector("#" + box.id + " ." + box.videoIndex)
+            shouldChange = shouldChange && elapsed > videoEl.duration;
+        }
+        if (shouldChange && box.nextMedia) {
+            box.currMedia = box.nextMedia;
+            box.nextMedia = null;
+            box.prevChange = new Date();
+            let imageEl = document.querySelector("#" + box.id + " .img")
+            const prevVideoIndex = box.videoIndex
+            let prevVideoEl = document.querySelector("#" + box.id + " ." + prevVideoIndex)
+            prevVideoEl.style.display = "none";
+            if (prevVideoEl.stop != undefined) {
+                prevVideoEl.stop()
+            }
+            if (box.currMedia.mimeType.indexOf('video/') === 0) {
+                const nextVideoIndex = (box.videoIndex == "video-1") ? "video-2" : "video-1";
+                box.videoIndex = nextVideoIndex;
+                let videoEl = document.querySelector("#" + box.id + " ." + box.videoIndex)
+                imageEl.style.display = "none";
+                videoEl.style.display = 'inline';
+                videoEl.play()
+            } else {
+                imageEl.style.display = "inline";
+                imageEl.setAttribute('src', buildFullUrl(box.currMedia))
+            }
+            fetchNext(box)
+        }
     }
-    fetchNext()
-
+    setTimeout(mainLoop, 500)
 }
-fetchNext()
+
+for (let box of boxes) {
+    fetchNext(box)
+}
+mainLoop()
+
 </script>
 </body>
 </html>
