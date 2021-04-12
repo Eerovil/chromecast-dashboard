@@ -25,6 +25,11 @@ def index():
     return send_from_directory('.', 'index.html')
 
 
+@app.route('/iframe', methods=['GET'])
+def index2():
+    return send_from_directory('.', 'index_iframe.html')
+
+
 @app.route('/get_image', methods=['GET'])
 def get_image():
     return randomize_image()
