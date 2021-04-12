@@ -6,6 +6,9 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js" integrity="sha512-bZS47S7sPOxkjU/4Bt0zrhEtWx0y0CRkhEp8IckzK+ltifIIE9EMIMTuT/mEzoIMewUINruDBIR/jJnbguonqQ==" crossorigin="anonymous"></script>
 
 <style>
+body {
+    width: 100%
+}
 .video-1, .video-2, .img {
     display: none;
     height: 100%
@@ -51,23 +54,26 @@
 var changeSecs = 10;
 var nextMedia;
 var turn = 'left';  // Which image/video will change
-var boxes = [
-    {
-        id: "left",
-        currMedia: null,
-        nextMedia: null,
-        offset: 0,
-        videoIndex: "video-1",
-        prevChange: null,  // Last changed
-    },
-    {
-        id: "right",
-        currMedia: null,
-        nextMedia: null,
-        videoIndex: "video-1",
-        prevChange: null,  // Last changed
-    },
-]
+var boxes = [];
+function initBoxes() {
+    boxes = [
+        {
+            id: "left",
+            currMedia: null,
+            nextMedia: null,
+            offset: 0,
+            videoIndex: "video-1",
+            prevChange: null,  // Last changed
+        },
+        {
+            id: "right",
+            currMedia: null,
+            nextMedia: null,
+            videoIndex: "video-1",
+            prevChange: null,  // Last changed
+        },
+    ]
+}
 function buildFullUrl(mediaItem) {
     return mediaItem.baseUrl + "=w2048-h1024";
 }
@@ -93,6 +99,7 @@ function fetchNext(box) {
 }
 
 function mainLoop() {
+    try {
     for (let box of boxes) {
         const now = new Date();
         const elapsed = box.prevChange == null ? null : ((now.getTime() - box.prevChange.getTime()) / 1000.0)
@@ -126,9 +133,17 @@ function mainLoop() {
             fetchNext(box)
         }
     }
+    } catch (err) {
+        initBoxes();
+        for (let box of boxes) {
+            fetchNext(box)
+        }
+        console.log(err)
+    }
     setTimeout(mainLoop, 500)
 }
 
+initBoxes();
 for (let box of boxes) {
     fetchNext(box)
 }
