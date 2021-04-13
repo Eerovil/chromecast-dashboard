@@ -64,6 +64,7 @@ function initBoxes() {
             offset: 0,
             videoIndex: "video-1",
             prevChange: null,  // Last changed
+            nextMediaReady: true,
         },
         {
             id: "right",
@@ -71,6 +72,7 @@ function initBoxes() {
             nextMedia: null,
             videoIndex: "video-1",
             prevChange: null,  // Last changed
+            nextMediaReady: true,
         },
     ]
 }
@@ -80,21 +82,38 @@ function buildFullUrl(mediaItem) {
 function preloadMediaItem(box) {
     if (box.nextMedia.mimeType.indexOf('image/') === 0) {
         (new Image()).src = buildFullUrl(box.nextMedia);
+        box.nextMediaReady = true;
+        console.log("Box " + box.id + " (image) nextMedia = " + box.nextMedia.id)
     } else if (box.nextMedia.mimeType.indexOf('video/') === 0) {
         // Load video in background
         const nextVideoIndex = (box.videoIndex == "video-1") ? "video-2" : "video-1";
         const nextVideoEl = document.querySelector("#" + box.id + " ." + nextVideoIndex)
+        const nextMediaId = box.nextMedia.id
         nextVideoEl.firstElementChild.setAttribute('src', box.nextMedia.baseUrl + "=dv")
         nextVideoEl.setAttribute('type', box.nextMedia.mimeType)
         nextVideoEl.load()
+        box.nextMediaReady = false;
+        console.log("Box " + box.id + " (video) nextMedia = " + nextMediaId)
+        nextVideoEl.addEventListener('canplay', function (event) {
+            if (box.nextMedia && box.nextMedia.id == nextMediaId) {
+                box.nextMediaReady = true;
+                console.log("Box " + box.id + " video nextMediaReady.")
+            }
+        });
     }
 }
 
 function fetchNext(box) {
-    axios.get('/get_image')
+    const httpClient = axios.create();
+    httpClient.defaults.timeout = 5000;
+    httpClient.get('/get_image')
         .then(resp => {
             box.nextMedia = resp.data
             preloadMediaItem(box)
+        })
+        .catch(err => {
+            // Try again
+            setTimeout(() => {fetchNext(box)}, 1000)
         })
 }
 
@@ -109,29 +128,35 @@ function mainLoop() {
             shouldChange = shouldChange && elapsed > videoEl.duration;
         }
         if (shouldChange && box.nextMedia) {
-            box.currMedia = box.nextMedia;
-            box.nextMedia = null;
-            box.prevChange = new Date();
-            let imageEl = document.querySelector("#" + box.id + " .img")
-            const prevVideoIndex = box.videoIndex
-            let prevVideoEl = document.querySelector("#" + box.id + " ." + prevVideoIndex)
-            prevVideoEl.style.display = "none";
-            if (prevVideoEl.stop != undefined) {
-                prevVideoEl.pause();
-                prevVideoEl.firstElementChild.removeAttribute('src'); // empty source
-                prevVideoEl.removeAttribute('src'); // empty source
-                prevVideoEl.load();
-            }
-            if (box.currMedia.mimeType.indexOf('video/') === 0) {
-                const nextVideoIndex = (box.videoIndex == "video-1") ? "video-2" : "video-1";
-                box.videoIndex = nextVideoIndex;
-                let videoEl = document.querySelector("#" + box.id + " ." + box.videoIndex)
-                imageEl.style.display = "none";
-                videoEl.style.display = 'inline';
-                videoEl.play()
+            console.log("Box " + box.id + " shouldChange")
+            // If media is not ready, don't switch to it. Instead get a new media
+            if (box.nextMediaReady) {
+                box.currMedia = box.nextMedia;
+                box.nextMedia = null;
+                box.prevChange = new Date();
+                let imageEl = document.querySelector("#" + box.id + " .img")
+                const prevVideoIndex = box.videoIndex
+                let prevVideoEl = document.querySelector("#" + box.id + " ." + prevVideoIndex)
+                prevVideoEl.style.display = "none";
+                if (prevVideoEl.stop != undefined) {
+                    prevVideoEl.pause();
+                    prevVideoEl.firstElementChild.removeAttribute('src'); // empty source
+                    prevVideoEl.removeAttribute('src'); // empty source
+                    prevVideoEl.load();
+                }
+                if (box.currMedia.mimeType.indexOf('video/') === 0) {
+                    const nextVideoIndex = (box.videoIndex == "video-1") ? "video-2" : "video-1";
+                    box.videoIndex = nextVideoIndex;
+                    let videoEl = document.querySelector("#" + box.id + " ." + box.videoIndex)
+                    imageEl.style.display = "none";
+                    videoEl.style.display = 'inline';
+                    videoEl.play()
+                } else {
+                    imageEl.style.display = "inline";
+                    imageEl.setAttribute('src', buildFullUrl(box.currMedia))
+                }
             } else {
-                imageEl.style.display = "inline";
-                imageEl.setAttribute('src', buildFullUrl(box.currMedia))
+                console.log("Box " + box.id + " nextMediaReady was false!")
             }
             fetchNext(box)
         }
