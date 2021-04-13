@@ -13,7 +13,7 @@ import logging
 
 app = Flask(__name__)
 app.secret_key = "super secret key"
-app.logger.setLevel(logging.INFO)
+app.logger.setLevel(logging.DEBUG)
 with open('config.json', 'r') as config_file:
     app.config.update(json.load(config_file))
 creds = None
