@@ -115,8 +115,10 @@ def fetch_media_item(album, index=0):
     counter = 0
     ret = None
     if len(album['cached_media_items']) > index:
+        ret = album['cached_media_items'][index]
         app.logger.info("Found in cache!")
-        return album['cached_media_items'][index]
+        app.logger.debug("%s", json.dumps(ret, indent=4))
+        return ret
     elif len(album['cached_media_items']) > 0 and album.get('cached_page_token', None):
         app.logger.info("Cache exists, but not long enough.")
         page_token = album['cached_page_token']
@@ -145,6 +147,7 @@ def fetch_media_item(album, index=0):
         index -= 100
 
     app.logger.info("Found mediaitem! (cache size %s)", len(album['cached_media_items']))
+    app.logger.debug("%s", json.dumps(ret, indent=4))
     return ret
 
 
