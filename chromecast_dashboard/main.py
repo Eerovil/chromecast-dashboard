@@ -61,7 +61,12 @@ def randomize_image():
     for album in albums:
         count = int(album["mediaItemsCount"])
         if random_index < count:
-            return fetch_media_item(album, random_index)
+            ret = fetch_media_item(album, random_index)
+            return ret
+            # if ret['mimeType'].startswith('video'):
+            #     return ret
+            # else:
+            #     return randomize_image()
         random_index -= count
 
     app.logger.error("Failed to get random image!")
