@@ -35,6 +35,12 @@ def get_image():
     return randomize_image()
 
 
+@app.route('/log', methods=['POST'])
+def log():
+    app.logger.info("log: %s", request.get_json()['message'])
+    return ''
+
+
 @app.after_request
 def after_request(response):
     header = response.headers
@@ -117,7 +123,7 @@ def fetch_media_item(album, index=0):
     if len(album['cached_media_items']) > index:
         ret = album['cached_media_items'][index]
         app.logger.info("Found in cache!")
-        app.logger.debug("%s", json.dumps(ret, indent=4))
+        app.logger.debug(ret['id'])
         return ret
     elif len(album['cached_media_items']) > 0 and album.get('cached_page_token', None):
         app.logger.info("Cache exists, but not long enough.")
@@ -147,7 +153,7 @@ def fetch_media_item(album, index=0):
         index -= 100
 
     app.logger.info("Found mediaitem! (cache size %s)", len(album['cached_media_items']))
-    app.logger.debug("%s", json.dumps(ret, indent=4))
+    app.logger.debug("%s", ret['id'])
     return ret
 
 
