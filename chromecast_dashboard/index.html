@@ -61,7 +61,6 @@ function initBoxes() {
             id: "left",
             currMedia: null,
             nextMedia: null,
-            offset: 0,
             videoIndex: "video-1",
             prevChange: null,  // Last changed
             nextMediaReady: true,
@@ -94,10 +93,18 @@ function preloadMediaItem(box) {
         nextVideoEl.load()
         box.nextMediaReady = false;
         console.log("Box " + box.id + " (video) nextMedia = " + nextMediaId)
-        nextVideoEl.addEventListener('canplay', function (event) {
+        nextVideoEl.addEventListener('canplaythrough', function (event) {
             if (box.nextMedia && box.nextMedia.id == nextMediaId) {
                 box.nextMediaReady = true;
                 console.log("Box " + box.id + " video nextMediaReady.")
+            }
+        });
+        nextVideoEl.addEventListener('error', function (event) {
+            if (box.nextMedia && box.nextMedia.id == nextMediaId) {
+                console.log("Box " + box.id + " video nextMedia error.")
+            } else if (box.currMedia && box.currMedia.id == nextMediaId) {
+                console.log("Box " + box.id + " video currMedia error.")
+                box.currMedia.error = true;
             }
         });
     }
@@ -127,8 +134,9 @@ function mainLoop() {
             let videoEl = document.querySelector("#" + box.id + " ." + box.videoIndex)
             shouldChange = shouldChange && elapsed > videoEl.duration;
         }
-        if (shouldChange && box.nextMedia) {
-            console.log("Box " + box.id + " shouldChange")
+        const hasError = (box.currMedia || {}).error
+        if (box.nextMedia && (shouldChange || hasError)) {
+            console.log("Box " + box.id + " shouldChange" + (hasError ? " has error!" : ""))
             // If media is not ready, don't switch to it. Instead get a new media
             if (box.nextMediaReady) {
                 box.currMedia = box.nextMedia;
@@ -150,6 +158,7 @@ function mainLoop() {
                     let videoEl = document.querySelector("#" + box.id + " ." + box.videoIndex)
                     imageEl.style.display = "none";
                     videoEl.style.display = 'inline';
+                    videoEl.muted = true;
                     videoEl.play()
                 } else {
                     imageEl.style.display = "inline";
