@@ -142,6 +142,8 @@ def fetch_media_item(album, index=0):
             }
         )
         data = response.json()
+        if "mediaItems" not in data:
+            app.logger.error(json.dumps(data, indent=4))
         counter += 100
         if len(album['cached_media_items']) < counter:
             album['cached_media_items'] += data["mediaItems"]
