@@ -100,7 +100,7 @@ function preloadMediaItem(box) {
         const nextVideoEl = document.querySelector("#" + box.id + " ." + nextVideoIndex)
         const nextMediaId = box.nextMedia.id
         nextVideoEl.firstElementChild.setAttribute('src', box.nextMedia.baseUrl + "=dv")
-        nextVideoEl.setAttribute('type', box.nextMedia.mimeType)
+        nextVideoEl.firstElementChild.setAttribute('type', box.nextMedia.mimeType)
         nextVideoEl.load()
         box.nextMediaReady = false;
         log("Box " + box.id + " (video) nextMedia = " + nextMediaId)
