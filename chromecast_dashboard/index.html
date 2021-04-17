@@ -179,6 +179,17 @@ function mainLoop() {
                     videoEl.style.display = 'inline';
                     videoEl.muted = true;
                     videoEl.play()
+                    setTimeout(() => {
+                        // Unmute
+                        videoEl.muted = false;
+                        videoEl.removeAttribute('muted');
+                        if (videoEl.paused) {
+                            // Crap, fall back!
+                            videoEl.muted = true;
+                            videoEl.setAttribute('muted', '');
+                            videoEl.play();
+                        }
+                    }, 10)
                 } else {
                     imageEl.style.display = "inline";
                     imageEl.setAttribute('src', buildFullUrl(box.currMedia))
