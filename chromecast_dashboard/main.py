@@ -25,14 +25,9 @@ def index2():
     return send_from_directory('.', 'index_iframe.html')
 
 
-@app.route('/get_image', methods=['GET'])
-def get_image():
-    return randomize_media(media_type="image")
-
-
-@app.route('/get_video', methods=['GET'])
+@app.route('/get_media', methods=['GET'])
 def get_video():
-    return randomize_media(media_type="video")
+    return randomize_media(media_type=request.GET.get('type', 'image'))
 
 
 @app.route('/log', methods=['POST'])

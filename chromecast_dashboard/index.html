@@ -90,7 +90,7 @@ var changeSecs = 10;
 var nextMedia;
 var turn = 'left';  // Which image/video will change
 var boxes = [];
-var baseUrl = "https://ahdintie-local.duckdns.org:5010";
+var baseUrl = "https://ahdintie-local.duckdns.org:8125/chromecast-dashboard";
 function log(message) {
     console.log(message)
     axios.post(baseUrl + '/log', {message})
@@ -164,9 +164,9 @@ function preloadMediaItem(box) {
 function fetchNext(box) {
     const httpClient = axios.create();
     httpClient.defaults.timeout = 5000;
-    let url = baseUrl + '/get_image';
+    let url = baseUrl + '/get_media?type=image';
     if (box.id == "right" && box.currMedia && box.currMedia.mimeType.match(/^image/)) {
-        url = baseUrl + '/get_video'
+        url = baseUrl + '/get_media?type=video'
     }
     httpClient.get(url)
         .then(resp => {
