@@ -5,6 +5,10 @@
 <meta charset="utf-8">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js" integrity="sha512-bZS47S7sPOxkjU/4Bt0zrhEtWx0y0CRkhEp8IckzK+ltifIIE9EMIMTuT/mEzoIMewUINruDBIR/jJnbguonqQ==" crossorigin="anonymous"></script>
 
+  <!-- Post load all the goods used to interact with sender. -->
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+  <script src="//www.gstatic.com/cast/sdk/libs/receiver/2.0.0/cast_receiver.js"></script>
+
 <style>
 body {
     width: 100%
@@ -50,6 +54,38 @@ span.info {
     </img>
 </div>
 <script>
+
+window.onload = function() {
+  cast.receiver.logger.setLevelValue(0);
+  window.castReceiverManager = cast.receiver.CastReceiverManager.getInstance();
+  console.log('Starting Receiver Manager');
+
+  castReceiverManager.onReady = function(event) {
+    console.log('Received Ready event: ' + JSON.stringify(event.data));
+    window.castReceiverManager.setApplicationState('chromecast-dashboard is ready...');
+  };
+
+  castReceiverManager.onSenderConnected = function(event) {
+    console.log('Received Sender Connected event: ' + event.senderId);
+  };
+
+  castReceiverManager.onSenderDisconnected = function(event) {
+    console.log('Received Sender Disconnected event: ' + event.senderId);
+  };
+
+  window.messageBus =
+    window.castReceiverManager.getCastMessageBus(
+        'urn:x-cast:com.boombatower.chromecast-dashboard', cast.receiver.CastMessageBus.MessageType.JSON);
+
+  window.messageBus.onMessage = function(event) {
+    console.log('Message [' + event.senderId + ']: ' + event.data);
+  }
+
+  // Initialize the CastReceiverManager with an application status message.
+  window.castReceiverManager.start({statusText: 'Application is starting'});
+  console.log('Receiver Manager started');
+
+
 var changeSecs = 10;
 var nextMedia;
 var turn = 'left';  // Which image/video will change
@@ -228,6 +264,7 @@ for (let box of boxes) {
 }
 mainLoop()
 
+};
 </script>
 </body>
 </html>
