@@ -97,7 +97,7 @@ def fetch_media_item(album, index=0):
         page_token = album['cached_page_token']
         counter += len(album['cached_media_items'])
         index -= counter
-    while index >= 0:
+    while index >= 0 and page_token is not None:
         print("Fetching page.. (items %s to %s)", counter, counter + 100)
         response = requests.post(
             'https://photoslibrary.googleapis.com/v1/mediaItems:search',
@@ -115,13 +115,17 @@ def fetch_media_item(album, index=0):
         counter += 100
         if len(album['cached_media_items']) < counter:
             album['cached_media_items'] += data["mediaItems"]
-        page_token = data["nextPageToken"]
+        page_token = data.get("nextPageToken", None)
         album['cached_page_token'] = page_token
         persist_cache()
         if index < 100:
             ret = data["mediaItems"][index]
             break
         index -= 100
+
+    if not ret:
+        print("Not found item")
+        return
 
     print("Found mediaitem! (cache size %s)", len(album['cached_media_items']))
     print("%s", ret['id'])
