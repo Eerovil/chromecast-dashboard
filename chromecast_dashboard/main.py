@@ -27,7 +27,7 @@ def index2():
 
 @app.route('/get_media', methods=['GET'])
 def get_video():
-    return randomize_media(media_type=request.GET.get('type', 'image'))
+    return randomize_media(media_type=request.args.get('type', 'image'))
 
 
 @app.route('/log', methods=['POST'])
