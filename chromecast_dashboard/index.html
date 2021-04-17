@@ -179,6 +179,10 @@ function mainLoop() {
                     videoEl.style.display = 'inline';
                     videoEl.muted = true;
                     videoEl.play()
+                    setTimeout(() => {
+                        videoEl.muted = false;
+                        videoEl.removeAttribute('muted');
+                    }, 100)
                 } else {
                     imageEl.style.display = "inline";
                     imageEl.setAttribute('src', buildFullUrl(box.currMedia))
