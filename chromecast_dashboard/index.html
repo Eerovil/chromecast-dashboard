@@ -49,6 +49,9 @@ span.info {
     </img>
 </div>
 <div id="right">
+    <video id="player" class="video-1">
+    Your browser does not support the video tag.
+    </video>
     <span class="info">Test</span>
     <img class="img">
     </img>
@@ -91,6 +94,7 @@ var nextMedia;
 var turn = 'left';  // Which image/video will change
 var boxes = [];
 var baseUrl = "https://ahdintie-local.duckdns.org:8125/chromecast-dashboard";
+var player = document.querySelector("#player")
 function log(message) {
     console.log(message)
     //axios.post(baseUrl + '/log', {message})
@@ -133,31 +137,29 @@ function preloadMediaItem(box) {
     } else if (box.nextMedia.mimeType.indexOf('video/') === 0) {
         // Load video in background
         const boxEl = document.querySelector('#' + box.id)
-        const nextVideoEl = document.createElement('VIDEO')
-        nextVideoEl.classList.add('video-1')
-        nextVideoEl.setAttribute('loop', '')
-        nextVideoEl.setAttribute('muted', '')
-        nextVideoEl.setAttribute('src', box.nextMedia.baseUrl + "=dv")
-        nextVideoEl.setAttribute('type', box.nextMedia.mimeType)
-        boxEl.appendChild(nextVideoEl)
-        nextVideoEl.load()
-        box.nextMediaReady = false;
+        player.setAttribute('loop', '')
+        player.setAttribute('muted', '')
+        player.setAttribute('src', box.nextMedia.baseUrl + "=dv")
+        player.setAttribute('type', box.nextMedia.mimeType)
+        player.load()
+        box.nextMediaReady = true;
         const nextMediaId = box.nextMedia.id
         log("Box " + box.id + " (video) nextMedia = " + nextMediaId)
-        nextVideoEl.addEventListener('canplaythrough', function (event) {
-            if (box.nextMedia && box.nextMedia.id == nextMediaId) {
-                box.nextMediaReady = true;
-                log("Box " + box.id + " video nextMediaReady.")
-            }
-        });
-        nextVideoEl.addEventListener('error', function (event) {
-            if (box.nextMedia && box.nextMedia.id == nextMediaId) {
-                log("Box " + box.id + " video nextMedia error.")
-            } else if (box.currMedia && box.currMedia.id == nextMediaId) {
-                log("Box " + box.id + " video currMedia error.")
-                box.currMedia.error = true;
-            }
-        });
+        
+        // player.addEventListener('canplaythrough', function (event) {
+        //     if (box.nextMedia && box.nextMedia.id == nextMediaId) {
+        //         box.nextMediaReady = true;
+        //         log("Box " + box.id + " video nextMediaReady.")
+        //     }
+        // });
+        // player.addEventListener('error', function (event) {
+        //     if (box.nextMedia && box.nextMedia.id == nextMediaId) {
+        //         log("Box " + box.id + " video nextMedia error.")
+        //     } else if (box.currMedia && box.currMedia.id == nextMediaId) {
+        //         log("Box " + box.id + " video currMedia error.")
+        //         box.currMedia.error = true;
+        //     }
+        // });
     }
 }
 
@@ -193,8 +195,7 @@ function mainLoop() {
         const elapsed = box.prevChange == null ? null : ((now.getTime() - box.prevChange.getTime()) / 1000.0)
         let shouldChange = (box.prevChange == null || elapsed > changeSecs)
         if (box.currMedia && box.currMedia.mimeType.indexOf('video/') === 0) {
-            let videoEl = document.querySelector("#" + box.id + " ." + box.videoIndex)
-            shouldChange = shouldChange && elapsed > videoEl.duration;
+            shouldChange = shouldChange && elapsed > player.duration;
         }
         const hasError = (box.currMedia || {}).error
         if (box.nextMedia && (shouldChange || hasError)) {
@@ -211,37 +212,15 @@ function mainLoop() {
                 box.prevChange = new Date();
                 let imageEl = document.querySelector("#" + box.id + " .img")
                 if (box.currMedia.mimeType.indexOf('video/') === 0) {
-                    let videoEl = document.querySelector("#" + box.id + " ." + box.videoIndex)
                     imageEl.style.display = "none";
-                    videoEl.style.display = 'inline';
-                    videoEl.muted = true;
-                    videoEl.play()
-                    setTimeout(() => {
-                        // Unmute
-                        videoEl.muted = false;
-                        videoEl.removeAttribute('muted');
-                        if (videoEl.paused) {
-                            // Crap, fall back!
-                            videoEl.muted = true;
-                            videoEl.setAttribute('muted', '');
-                            videoEl.play();
-                        }
-                    }, 10)
+                    player.style.display = 'inline';
+                    player.muted = true;
+                    player.play()
                 } else {
                     imageEl.style.display = "inline";
                     imageEl.setAttribute('src', buildFullUrl(box.currMedia))
-                    let prevVideoEl = document.querySelector("#" + box.id + " ." + box.videoIndex)
-                    if (prevVideoEl) {
-                        prevVideoEl.style.display = "none";
-                        if (prevVideoEl.stop != undefined) {
-                            prevVideoEl.pause();
-                            prevVideoEl.firstElementChild.removeAttribute('src'); // empty source
-                            prevVideoEl.removeAttribute('src'); // empty source
-                            prevVideoEl.load();
-                            prevVideoEl.remove();
-                        }
-                        prevVideoEl.remove();
-                    }
+                    player.style.display = 'none';
+                    player.pause();
                 }
             } else {
                 log("Box " + box.id + " nextMediaReady was false!")
