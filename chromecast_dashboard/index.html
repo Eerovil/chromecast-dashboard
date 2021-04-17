@@ -46,9 +46,6 @@ span.info {
 </div>
 <div id="right">
     <span class="info">Test</span>
-    <video class="video-1" loop>
-    <source src="" type="">
-    </video>
     <img class="img">
     </img>
 </div>
@@ -98,12 +95,17 @@ function preloadMediaItem(box) {
         log("Box " + box.id + " (image) nextMedia = " + box.nextMedia.id)
     } else if (box.nextMedia.mimeType.indexOf('video/') === 0) {
         // Load video in background
-        const nextVideoEl = document.querySelector("#" + box.id + " ." + box.videoIndex)
-        const nextMediaId = box.nextMedia.id
-        nextVideoEl.firstElementChild.setAttribute('src', box.nextMedia.baseUrl + "=dv")
-        nextVideoEl.firstElementChild.setAttribute('type', box.nextMedia.mimeType)
+        const boxEl = document.querySelector('#' + box.id)
+        const nextVideoEl = document.createElement('VIDEO')
+        nextVideoEl.classList.add('video-1')
+        nextVideoEl.setAttribute('loop', '')
+        nextVideoEl.setAttribute('muted', '')
+        nextVideoEl.setAttribute('src', box.nextMedia.baseUrl + "=dv")
+        nextVideoEl.setAttribute('type', box.nextMedia.mimeType)
+        boxEl.appendChild(nextVideoEl)
         nextVideoEl.load()
         box.nextMediaReady = false;
+        const nextMediaId = box.nextMedia.id
         log("Box " + box.id + " (video) nextMedia = " + nextMediaId)
         nextVideoEl.addEventListener('canplaythrough', function (event) {
             if (box.nextMedia && box.nextMedia.id == nextMediaId) {
@@ -143,6 +145,7 @@ function fetchNext(box) {
         .catch(err => {
             // Try again
             setTimeout(() => {fetchNext(box)}, 1000)
+            console.log(err)
         })
 }
 
@@ -170,24 +173,27 @@ function mainLoop() {
                 box.nextMedia = null;
                 box.prevChange = new Date();
                 let imageEl = document.querySelector("#" + box.id + " .img")
-                let prevVideoEl = document.querySelector("#" + box.id + " ." + box.videoIndex)
-                if (prevVideoEl) {
-                    prevVideoEl.style.display = "none";
-                    if (prevVideoEl.stop != undefined) {
-                        prevVideoEl.pause();
-                        prevVideoEl.firstElementChild.removeAttribute('src'); // empty source
-                        prevVideoEl.removeAttribute('src'); // empty source
-                        prevVideoEl.load();
-                    }
-                }
                 if (box.currMedia.mimeType.indexOf('video/') === 0) {
                     let videoEl = document.querySelector("#" + box.id + " ." + box.videoIndex)
                     imageEl.style.display = "none";
                     videoEl.style.display = 'inline';
+                    videoEl.muted = true;
                     videoEl.play()
                 } else {
                     imageEl.style.display = "inline";
                     imageEl.setAttribute('src', buildFullUrl(box.currMedia))
+                    let prevVideoEl = document.querySelector("#" + box.id + " ." + box.videoIndex)
+                    if (prevVideoEl) {
+                        prevVideoEl.style.display = "none";
+                        if (prevVideoEl.stop != undefined) {
+                            prevVideoEl.pause();
+                            prevVideoEl.firstElementChild.removeAttribute('src'); // empty source
+                            prevVideoEl.removeAttribute('src'); // empty source
+                            prevVideoEl.load();
+                            prevVideoEl.remove();
+                        }
+                        prevVideoEl.remove();
+                    }
                 }
             } else {
                 log("Box " + box.id + " nextMediaReady was false!")
