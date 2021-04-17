@@ -34,7 +34,12 @@ def index2():
 
 @app.route('/get_image', methods=['GET'])
 def get_image():
-    return randomize_image()
+    return randomize_media(media_type="image")
+
+
+@app.route('/get_video', methods=['GET'])
+def get_video():
+    return randomize_media(media_type="video")
 
 
 @app.route('/log', methods=['POST'])
@@ -50,7 +55,7 @@ def after_request(response):
     return response
 
 
-def randomize_image():
+def randomize_media(media_type="image"):
     """
     Get a random media id from all albums
     """
@@ -70,11 +75,10 @@ def randomize_image():
         count = int(album["mediaItemsCount"])
         if random_index < count:
             ret = fetch_media_item(album, random_index)
-            return ret
-            # if ret['mimeType'].startswith('video'):
-            #     return ret
-            # else:
-            #     return randomize_image()
+            if ret['mimeType'].startswith(media_type):
+                return ret
+            else:
+                return randomize_media(media_type=media_type)
         random_index -= count
 
     app.logger.error("Failed to get random image!")

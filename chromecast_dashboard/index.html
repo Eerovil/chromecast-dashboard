@@ -13,6 +13,9 @@ body {
     display: none;
     height: 100%
 }
+.video-1 {
+    z-index: 9999;
+}
 #left, #right {
     position: absolute;
     height: 100vh;
@@ -31,20 +34,11 @@ body {
 </head>
 <body>
 <div id="left">
-    <video class="video-1" muted loop  oncanplay="this.muted=true">
-    <source src="" type="">
-    </video>
-    <video class="video-2" muted loop  oncanplay="this.muted=true">
-    <source src="" type="">
-    </video>
     <img class="img">
     </img>
 </div>
 <div id="right">
     <video class="video-1" muted loop  oncanplay="this.muted=true">
-    <source src="" type="">
-    </video>
-    <video class="video-2" muted loop  oncanplay="this.muted=true">
     <source src="" type="">
     </video>
     <img class="img">
@@ -96,8 +90,7 @@ function preloadMediaItem(box) {
         log("Box " + box.id + " (image) nextMedia = " + box.nextMedia.id)
     } else if (box.nextMedia.mimeType.indexOf('video/') === 0) {
         // Load video in background
-        const nextVideoIndex = (box.videoIndex == "video-1") ? "video-2" : "video-1";
-        const nextVideoEl = document.querySelector("#" + box.id + " ." + nextVideoIndex)
+        const nextVideoEl = document.querySelector("#" + box.id + " ." + box.videoIndex)
         const nextMediaId = box.nextMedia.id
         nextVideoEl.firstElementChild.setAttribute('src', box.nextMedia.baseUrl + "=dv")
         nextVideoEl.firstElementChild.setAttribute('type', box.nextMedia.mimeType)
@@ -124,8 +117,18 @@ function preloadMediaItem(box) {
 function fetchNext(box) {
     const httpClient = axios.create();
     httpClient.defaults.timeout = 5000;
-    httpClient.get('/get_image')
+    let url = '/get_image';
+    if (box.id == "right" && box.currMedia && box.currMedia.mimeType.match(/^image/)) {
+        url = '/get_video'
+    }
+    httpClient.get(url)
         .then(resp => {
+            console.log(boxes.reduce((acc, box) => acc.concat([(box.currMedia || {}).id, (box.nextMedia || {}).id]), []))
+            if (boxes.reduce((acc, box) => acc.concat([(box.currMedia || {}).id, (box.nextMedia || {}).id]), []).includes(resp.data.id)) {
+                console.log("Got same media again")
+                setTimeout(() => {fetchNext(box)}, 500)
+                return;
+            }
             box.nextMedia = resp.data
             preloadMediaItem(box)
         })
@@ -154,18 +157,17 @@ function mainLoop() {
                 box.nextMedia = null;
                 box.prevChange = new Date();
                 let imageEl = document.querySelector("#" + box.id + " .img")
-                const prevVideoIndex = box.videoIndex
-                let prevVideoEl = document.querySelector("#" + box.id + " ." + prevVideoIndex)
-                prevVideoEl.style.display = "none";
-                if (prevVideoEl.stop != undefined) {
-                    prevVideoEl.pause();
-                    prevVideoEl.firstElementChild.removeAttribute('src'); // empty source
-                    prevVideoEl.removeAttribute('src'); // empty source
-                    prevVideoEl.load();
+                let prevVideoEl = document.querySelector("#" + box.id + " ." + box.videoIndex)
+                if (prevVideoEl) {
+                    prevVideoEl.style.display = "none";
+                    if (prevVideoEl.stop != undefined) {
+                        prevVideoEl.pause();
+                        prevVideoEl.firstElementChild.removeAttribute('src'); // empty source
+                        prevVideoEl.removeAttribute('src'); // empty source
+                        prevVideoEl.load();
+                    }
                 }
                 if (box.currMedia.mimeType.indexOf('video/') === 0) {
-                    const nextVideoIndex = (box.videoIndex == "video-1") ? "video-2" : "video-1";
-                    box.videoIndex = nextVideoIndex;
                     let videoEl = document.querySelector("#" + box.id + " ." + box.videoIndex)
                     imageEl.style.display = "none";
                     videoEl.style.display = 'inline';

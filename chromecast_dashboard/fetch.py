@@ -1,4 +1,7 @@
 # coding: utf-8
+
+# Fetches all albums from config. data is good for 1 hour!
+
 import os
 import json
 import requests
@@ -13,11 +16,6 @@ with open('config.json', 'r') as config_file:
     config = json.load(config_file)
 creds = None
 albums = []
-try:
-    with open('albums.json', 'r') as album_file:
-        albums = json.load(album_file)
-except:
-    print("no albums")
 persist_lock = False
 
 
@@ -105,12 +103,12 @@ def fetch_media_item(album, index=0):
         counter += 100
         if len(album['cached_media_items']) < counter:
             album['cached_media_items'] += data["mediaItems"]
-        if index < 100:
-            ret = data["mediaItems"][index]
-            break
         page_token = data["nextPageToken"]
         album['cached_page_token'] = page_token
         persist_cache()
+        if index < 100:
+            ret = data["mediaItems"][index]
+            break
         index -= 100
 
     print("Found mediaitem! (cache size %s)", len(album['cached_media_items']))
