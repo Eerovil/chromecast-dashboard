@@ -20,6 +20,11 @@ def index():
     return send_from_directory('.', 'index.html')
 
 
+@app.route('/sender', methods=['GET'])
+def sender():
+    return send_from_directory('.', 'sender.html')
+
+
 @app.route('/iframe', methods=['GET'])
 def index2():
     return send_from_directory('.', 'index_iframe.html')
