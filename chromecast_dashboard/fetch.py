@@ -12,7 +12,9 @@ from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 
 
-with open('config.json', 'r') as config_file:
+dir_path = os.path.dirname(os.path.realpath(__file__))
+
+with open(os.path.join(dir_path, 'config.json'), 'r') as config_file:
     config = json.load(config_file)
 creds = None
 albums = []
@@ -25,7 +27,7 @@ def persist_cache():
         return
     persist_lock = True
     try:
-        with open('albums.json', 'w') as f:
+        with open(os.path.join(dir_path, 'albums.json'), 'w') as f:
             json.dump(albums, f)
     except Exception as e:
         print(e)
@@ -39,18 +41,18 @@ def init_oauth():
         "https://www.googleapis.com/auth/photoslibrary.sharing"
     ]
     global creds
-    if os.path.exists('token.json'):
-        creds = Credentials.from_authorized_user_file('token.json', SCOPES)
+    if os.path.exists(os.path.join(dir_path, 'token.json')):
+        creds = Credentials.from_authorized_user_file(os.path.join(dir_path, 'token.json'), SCOPES)
     # If there are no (valid) credentials available, let the user log in.
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
             flow = InstalledAppFlow.from_client_secrets_file(
-                'credentials.json', SCOPES)
+                os.path.join(dir_path, 'credentials.json'), SCOPES)
             creds = flow.run_local_server(port=0)
         # Save the credentials for the next run
-        with open('token.json', 'w') as token:
+        with open(os.path.join(dir_path, 'token.json'), 'w') as token:
             token.write(creds.to_json())
 
 
