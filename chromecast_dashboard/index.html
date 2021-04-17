@@ -90,9 +90,10 @@ var changeSecs = 10;
 var nextMedia;
 var turn = 'left';  // Which image/video will change
 var boxes = [];
+var baseUrl = "http://192.168.100.20:5010";
 function log(message) {
     console.log(message)
-    axios.post('/log', {message})
+    axios.post(baseUrl + '/log', {message})
 }
 
 function errorHandler(msg, url, lineNo, columnNo, error) {
@@ -163,9 +164,9 @@ function preloadMediaItem(box) {
 function fetchNext(box) {
     const httpClient = axios.create();
     httpClient.defaults.timeout = 5000;
-    let url = '/get_image';
+    let url = baseUrl + '/get_image';
     if (box.id == "right" && box.currMedia && box.currMedia.mimeType.match(/^image/)) {
-        url = '/get_video'
+        url = baseUrl + '/get_video'
     }
     httpClient.get(url)
         .then(resp => {
