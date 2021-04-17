@@ -13,11 +13,9 @@
       itself then enter an appropriate refresh interval in seconds.
     </p>
     <form method="get" action="JavaScript:connect();">
-      <label>Url <input type="text" id="url" placeholder="http://www.gabenewell.org/"></label>
       <button type="submit">Launch</button>
     </form>
     <!-- For some reason the 'number' field stops form action from firing -->
-    <label>Refresh <input type="number" id="refresh" min="0" value="0"></label>
     <button id="kill" disabled>Stop casting</button>
     <p id="post-note" style="display: none">
       If the page does not load please be sure HTTP header X-Frame-Options
@@ -106,30 +104,11 @@ function stopApp() {
 
 function connect() {
   console.log('connect()');
-  sendMessage({
-    type: 'load',
-    url: $('#url').val(),
-    refresh: $('#refresh').val(),
-  });
+  sendMessage({type: 'load'});
 }
 
 $('#kill').on('click', stopApp);
 
-// Populate input fields from query params
-$(function () {
-  if (!'URLSearchParams' in window) {
-    return;
-  }
-
-  var params = new URLSearchParams(window.location.search);
-  if (params.has('url')) {
-    $('#url').val(params.get('url'));
-  }
-
-  if (params.has('refresh')) {
-    $('#refresh').val(params.get('refresh'));
-  }
-});
   </script>
 
 </html>
