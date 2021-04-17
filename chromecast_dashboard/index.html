@@ -30,14 +30,22 @@ body {
 #right * {
     float: right
 }
+span.info {
+    position: absolute;
+    bottom: 0.5rem;
+    right: 1rem;
+    color: white;
+}
 </style>
 </head>
 <body>
 <div id="left">
+    <span class="info">Test</span>
     <img class="img">
     </img>
 </div>
 <div id="right">
+    <span class="info">Test</span>
     <video class="video-1" muted loop  oncanplay="this.muted=true">
     <source src="" type="">
     </video>
@@ -154,6 +162,11 @@ function mainLoop() {
             // If media is not ready, don't switch to it. Instead get a new media
             if (box.nextMediaReady) {
                 box.currMedia = box.nextMedia;
+                const infoEl = document.querySelector("#" + box.id + " .info");
+                infoEl.innerHTML = "";
+                if (box.currMedia && box.currMedia.mediaMetadata && box.currMedia.mediaMetadata.creationTime) {
+                    infoEl.innerHTML = (new Date(box.currMedia.mediaMetadata.creationTime)).toLocaleDateString('fi');
+                }
                 box.nextMedia = null;
                 box.prevChange = new Date();
                 let imageEl = document.querySelector("#" + box.id + " .img")
