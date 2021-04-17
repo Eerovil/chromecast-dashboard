@@ -13,13 +13,6 @@ app.logger.setLevel(logging.DEBUG)
 with open('config.json', 'r') as config_file:
     app.config.update(json.load(config_file))
 creds = None
-albums = []
-try:
-    with open('albums.json', 'r') as album_file:
-        albums = json.load(album_file)
-except:
-    app.logger.info("no albums")
-    raise AttributeError()
 
 
 @app.route('/', methods=['GET'])
@@ -59,6 +52,14 @@ def randomize_media(media_type="image"):
     """
     Get a random media id from all albums
     """
+    albums = []
+    try:
+        with open('albums.json', 'r') as album_file:
+            albums = json.load(album_file)
+    except:
+        app.logger.info("no albums")
+        raise AttributeError()
+
     total_media_count = 0
     for album in albums:
         total_media_count += len(album["cached_media_items"]) - 1
