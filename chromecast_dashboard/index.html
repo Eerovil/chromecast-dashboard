@@ -46,7 +46,7 @@ span.info {
 </div>
 <div id="right">
     <span class="info">Test</span>
-    <video class="video-1" muted loop  oncanplay="this.muted=true">
+    <video class="video-1" loop>
     <source src="" type="">
     </video>
     <img class="img">
@@ -184,7 +184,6 @@ function mainLoop() {
                     let videoEl = document.querySelector("#" + box.id + " ." + box.videoIndex)
                     imageEl.style.display = "none";
                     videoEl.style.display = 'inline';
-                    videoEl.muted = true;
                     videoEl.play()
                 } else {
                     imageEl.style.display = "inline";
