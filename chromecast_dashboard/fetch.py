@@ -56,16 +56,26 @@ def init_oauth():
 
 def get_all_albums():
     global creds
+    global albums
     headers = {'Authorization': 'Bearer {}'.format(creds.token)}
-    response = requests.get(
-        'https://photoslibrary.googleapis.com/v1/albums',
-        headers=headers
-    )
-    for album_data in response.json()["albums"]:
-        if album_data['title'] in config['ALBUMS']:
-            album_data['cached_media_items'] = []
-            album_data['config'] = config['ALBUMS'][album_data['title']]
-            albums.append(album_data)
+    albums_left = set(config['ALBUMS'].keys())
+    pageToken = ""
+    while albums_left:
+        response = requests.get(
+            'https://photoslibrary.googleapis.com/v1/albums?pageSize=50' + pageToken,
+            headers=headers
+        )
+        for album_data in response.json()["albums"]:
+            if album_data['title'] in config['ALBUMS']:
+                print("Found album " + album_data['title'])
+                album_data['cached_media_items'] = []
+                album_data['config'] = config['ALBUMS'][album_data['title']]
+                albums.append(album_data)
+                albums_left.remove(album_data['title'])
+        if not response.json().get("nextPageToken"):
+            print("Last page, not found: " + albums_left)
+            return
+        pageToken = "&pageToken={}".format(response.json()["nextPageToken"])
 
 
 def fetch_media_item(album, index=0):
@@ -122,5 +132,5 @@ if __name__ == '__main__':
     for album in albums:
         if len(sys.argv) > 1:
             fetch_media_item(album, int(sys.argv[1]) - 1)
-            break
+            continue
         fetch_media_item(album, int(album['mediaItemsCount']) - 1)

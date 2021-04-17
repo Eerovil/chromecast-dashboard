@@ -62,18 +62,14 @@ def randomize_media(media_type="image"):
 
     total_media_count = 0
     for album in albums:
-        total_media_count += len(album["cached_media_items"]) - 1
-    
-    # total_media_count = 200
-    if len(albums[0]['cached_media_items']) == 0:
-        total_media_count = 100
-    
+        total_media_count += (len(album["cached_media_items"]) - 1)
+
     random_index = random.randint(0, total_media_count)
 
     # random_index = 77
 
     for album in albums:
-        count = int(album["mediaItemsCount"])
+        count = len(album["cached_media_items"])
         if random_index < count:
             ret = fetch_media_item(album, random_index)
             if ret['mimeType'].startswith(media_type):
