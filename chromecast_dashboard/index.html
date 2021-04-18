@@ -14,13 +14,13 @@
 <style>
 body {
     width: 100%;
-    height: 100vh;
+    margin: 0;
 }
-.video-1, .video-2, .img {
+.video, .img {
     display: none;
-    height: 100%
+    height: 100%;
 }
-.video-1 {
+.video {
     z-index: 9999;
 }
 #left, #right {
@@ -52,7 +52,7 @@ span.info {
     </img>
 </div>
 <div id="right">
-    <video id="castMediaElement" loop>
+    <video id="castMediaElement" class="video" loop>
     Your browser does not support the video tag.
     </video>
     <span class="info">Test</span>
