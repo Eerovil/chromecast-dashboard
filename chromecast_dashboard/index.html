@@ -201,7 +201,7 @@ function mainLoop() {
         const now = new Date();
         const elapsed = box.prevChange == null ? null : ((now.getTime() - box.prevChange.getTime()) / 1000.0)
         let shouldChange = (box.prevChange == null || elapsed > changeSecs)
-        if (box.currMedia && box.currMedia.mimeType.indexOf('video/') === 0) {
+        if (box.currMedia && box.currMedia.mimeType.indexOf('video/') === 0 && player.duration) {
             shouldChange = shouldChange && elapsed > player.duration;
             log("Video still playing: " + elapsed + " < " + player.duration)
         }
