@@ -158,7 +158,6 @@ function preloadMediaItem(box) {
         // Load video in background
         const boxEl = document.querySelector('#' + box.id)
         player.setAttribute('loop', '')
-        player.setAttribute('muted', '')
         player.setAttribute('src', box.nextMedia.baseUrl + "=dv")
         player.setAttribute('type', box.nextMedia.mimeType)
         player.load()
