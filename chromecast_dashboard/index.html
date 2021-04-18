@@ -51,7 +51,7 @@ span.info {
     </img>
 </div>
 <div id="right">
-    <video id="castMediaElement">
+    <video id="castMediaElement" loop>
     Your browser does not support the video tag.
     </video>
     <span class="info">Test</span>
@@ -72,33 +72,37 @@ var boxes = [];
 var baseUrl = "https://ahdintie-local.duckdns.org:8125/chromecast-dashboard";
 var player = document.querySelector("#castMediaElement")
 
-
-const context = cast.framework.CastReceiverContext.getInstance();
-context.addCustomMessageListener('urn:x-cast:com.eerovil.chromecast-dashboard', function (customEvent) {
-    if (customEvent.data.type == "message") {
-        document.getElementById("message").innerHTML = customEvent.data.text;
-        if (customEvent.data.text && customEvent.data.text.startsWith('https')) {
-            baseUrl = customEvent.data.text;
-            console.log("baseUrl updated to " + baseUrl)
+if (!window.location.href.startsWith('localhost')) {
+    const context = cast.framework.CastReceiverContext.getInstance();
+    context.addCustomMessageListener('urn:x-cast:com.eerovil.chromecast-dashboard', function (customEvent) {
+        if (customEvent.data.type == "message") {
+            document.getElementById("message").innerHTML = customEvent.data.text;
+            if (customEvent.data.text && customEvent.data.text.startsWith('https')) {
+                baseUrl = customEvent.data.text;
+                log("baseUrl updated to " + baseUrl)
+            }
         }
-    }
-});
+    });
 
-// Cast api will automatically use castMediaElement as player
-const playerManager = context.getPlayerManager();
+    // Cast api will automatically use castMediaElement as player
+    const playerManager = context.getPlayerManager();
 
-const playerData = {};
-const playerDataBinder = new cast.framework.ui.PlayerDataBinder(playerData);
+    const playerData = {};
+    const playerDataBinder = new cast.framework.ui.PlayerDataBinder(playerData);
 
-context.start();
+    context.start();
+}
 
 function log(message) {
-    console.log(message)
+    if (message.indexOf(' left') > -1) {
+        return;
+    }
+    console.log("local: ", message)
     //axios.post(baseUrl + '/log', {message})
 }
 
 function errorHandler(msg, url, lineNo, columnNo, error) {
-    log("Error! " + msg)
+    log("Error! " + msg + " " + url + " " + lineNo)
 }
 
 window.onerror = errorHandler;
@@ -173,9 +177,8 @@ function fetchNext(box) {
     }
     httpClient.get(url)
         .then(resp => {
-            console.log(boxes.reduce((acc, box) => acc.concat([(box.currMedia || {}).id, (box.nextMedia || {}).id]), []))
             if (boxes.reduce((acc, box) => acc.concat([(box.currMedia || {}).id, (box.nextMedia || {}).id]), []).includes(resp.data.id)) {
-                console.log("Got same media again")
+                log("Got same media again")
                 setTimeout(() => {fetchNext(box)}, 500)
                 return;
             }
@@ -185,7 +188,7 @@ function fetchNext(box) {
         .catch(err => {
             // Try again
             setTimeout(() => {fetchNext(box)}, 1000)
-            console.log(err)
+            log(err)
         })
 }
 
@@ -197,6 +200,7 @@ function mainLoop() {
         let shouldChange = (box.prevChange == null || elapsed > changeSecs)
         if (box.currMedia && box.currMedia.mimeType.indexOf('video/') === 0) {
             shouldChange = shouldChange && elapsed > player.duration;
+            log("Video still playing: " + elapsed + " < " + player.duration)
         }
         const hasError = (box.currMedia || {}).error
         if (box.nextMedia && (shouldChange || hasError)) {
@@ -213,15 +217,19 @@ function mainLoop() {
                 box.prevChange = new Date();
                 let imageEl = document.querySelector("#" + box.id + " .img")
                 if (box.currMedia.mimeType.indexOf('video/') === 0) {
+                    log("Displaying video for box " + box.id)
                     imageEl.style.display = "none";
                     player.style.display = 'inline';
                     player.muted = true;
                     player.play()
                 } else {
+                    log("Displaying image for box " + box.id)
                     imageEl.style.display = "inline";
                     imageEl.setAttribute('src', buildFullUrl(box.currMedia))
-                    player.style.display = 'none';
-                    player.pause();
+                    if (box.id == "right") {
+                        player.style.display = 'none';
+                        player.pause();
+                    }
                 }
             } else {
                 log("Box " + box.id + " nextMediaReady was false!")
