@@ -51,7 +51,9 @@ span.info {
     </img>
 </div>
 <div id="right">
-    <cast-media-player class="video-1"></cast-media-player>
+    <video id="castMediaElement" class="video-1">
+    Your browser does not support the video tag.
+    </video>
     <span class="info">Test</span>
     <img class="img">
     </img>
@@ -63,20 +65,28 @@ span.info {
 
 window.onload = function() {
 
+var changeSecs = 10;
+var nextMedia;
+var turn = 'left';  // Which image/video will change
+var boxes = [];
+var baseUrl = "https://ahdintie-local.duckdns.org:8125/chromecast-dashboard";
+var player = document.querySelector("#castMediaElement")
+
+
 const context = cast.framework.CastReceiverContext.getInstance();
 context.addCustomMessageListener('urn:x-cast:com.eerovil.chromecast-dashboard', function (customEvent) {
     if (customEvent.data.type == "message") {
     document.getElementById("message").innerHTML = customEvent.data.text;
     }
 });
-context.start();
 
-var changeSecs = 10;
-var nextMedia;
-var turn = 'left';  // Which image/video will change
-var boxes = [];
-var baseUrl = "https://ahdintie-local.duckdns.org:8125/chromecast-dashboard";
-var player = document.getElementsByTagName("cast-media-player")[0];
+// Cast api will automatically use castMediaElement as player
+const player = context.getPlayerManager();
+
+const playerData = {};
+const playerDataBinder = new cast.framework.ui.PlayerDataBinder(playerData);
+
+context.start();
 
 function log(message) {
     console.log(message)
