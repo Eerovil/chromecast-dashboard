@@ -7,7 +7,7 @@
 
   <!-- Post load all the goods used to interact with sender. -->
   <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
-  <script src="//www.gstatic.com/cast/sdk/libs/receiver/2.0.0/cast_receiver.js"></script>
+  <script src="https://www.gstatic.com/cast/js/receiver/1.0/cast_receiver.js"></script>
 
 <style>
 body {
@@ -56,38 +56,28 @@ span.info {
     <img class="img">
     </img>
 </div>
+<div class=".messages">
+    Hello world!
+</div>
 <script>
 
 window.onload = function() {
-  cast.receiver.logger.setLevelValue(0);
-  window.castReceiverManager = cast.receiver.CastReceiverManager.getInstance();
-  console.log('Starting Receiver Manager');
 
-  castReceiverManager.onReady = function(event) {
-    console.log('Received Ready event: ' + JSON.stringify(event.data));
-    window.castReceiverManager.setApplicationState('chromecast-dashboard is ready...');
-  };
+var receiver = new cast.receiver.Receiver('AC14F871', ['urn:x-cast:com.eerovil.chromecast-dashboard']),
+    channelHandler = new cast.receiver.ChannelHandler('urn:x-cast:com.eerovil.chromecast-dashboard'),
+    $messages = $('.messages'),
+    $body = $('body');
 
-  castReceiverManager.onSenderConnected = function(event) {
-    console.log('Received Sender Connected event: ' + event.senderId);
-  };
+channelHandler.addChannelFactory(
+    receiver.createChannelFactory('urn:x-cast:com.eerovil.chromecast-dashboard'));
 
-  castReceiverManager.onSenderDisconnected = function(event) {
-    console.log('Received Sender Disconnected event: ' + event.senderId);
-  };
+receiver.start();
 
-  window.messageBus =
-    window.castReceiverManager.getCastMessageBus(
-        'urn:x-cast:com.boombatower.chromecast-dashboard', cast.receiver.CastMessageBus.MessageType.JSON);
+channelHandler.addEventListener(cast.receiver.Channel.EventType.MESSAGE, onMessage.bind(this));
 
-  window.messageBus.onMessage = function(event) {
-    console.log('Message [' + event.senderId + ']: ' + event.data);
-  }
-
-  // Initialize the CastReceiverManager with an application status message.
-  window.castReceiverManager.start({statusText: 'Application is starting'});
-  console.log('Receiver Manager started');
-
+function onMessage(event) {
+    $messages.html(event.message.type);
+}
 
 var changeSecs = 10;
 var nextMedia;

@@ -1,50 +1,88 @@
-<html>
-  <head>
-    <title>Chromecast dashboard</title>
+<html data-cast-api-enabled="true">
+	<head>
+		<title>Hello World Chrome Sender</title>
+	</head>
+	<body>
+		<div class="receiver-div">
+			<h3>Choose A Receiver</h3>
+			<ul class="receiver-list">
+				<li>Looking for receivers...</li>
+			</ul>
+		</div>
+		<button class="kill" disabled>Kill the Connection</button>
+	</body>
 
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Cabin+Condensed:700">
-    <link rel="icon" type="image/png" href="favicon.png">
-    <script type="text/javascript" src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
-  </head>
-  <body>
-  <google-cast-launcher></google-cast-launcher>
-<button id="playPauseButton" class="playerButton">BUtton
-</button>
-  </body>
+	<script src="http://code.jquery.com/jquery-2.0.3.min.js"></script>
+	<script src="http://underscorejs.org/underscore-min.js"></script>
 
-  <!-- Post load all the goods used to interact with Chromecast/receiver. -->
-  <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
-  <script src="https://underscorejs.org/underscore-min.js"></script>
-  <script>
-  var applicationID = 'AC14F871';
+	<script>
+		var cast_api,
+			cv_activity,
+			receiverList,
+			$killSwitch = $('.kill');
 
-initializeCastApi = function() {
-  cast.framework.CastContext.getInstance().setOptions({
-    receiverApplicationId: applicationID,
-    autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED
-  });
+		window.addEventListener('message', function(event) {
+			if (event.source === window && event.data &&
+					event.data.source === 'CastApi' &&
+					event.data.event === 'Hello') {
+				initializeApi();
+			}
+		});
 
-  var player = new cast.framework.RemotePlayer();
-  var controller = new cast.framework.RemotePlayerController(player);
+		initializeApi = function() {
+			if (!cast_api) {
+				cast_api = new cast.Api();
+				cast_api.addReceiverListener('AC14F871', onReceiverList);
+			}
+		};
 
+		onReceiverList = function(list) {
+			if (list.length > 0) {
+				receiverList = list;
+				$('.receiver-list').empty();
+				receiverList.forEach(function(receiver) {
+					$listItem = $('<li><a href="#" data-id="' + receiver.id + '">' + receiver.name + '</a></li>');
+					$listItem.on('click', receiverClicked);
+					$('.receiver-list').append($listItem);
+				});
+			}
+		};
 
-document.createElement("google-cast-launcher");
+		receiverClicked = function(e) {
+			e.preventDefault();
 
-};
+			var $target = $(e.target),
+				receiver = _.find(receiverList, function(receiver) {
+					return receiver.id === $target.data('id');
+				});
 
-function stopCasting() {
-  var castSession = cast.framework.CastContext.getInstance().getCurrentSession();
-  // End the session and pass 'true' to indicate
-  // that Web Receiver application should be stopped.
-  castSession.endSession(true);
-}
+			doLaunch(receiver);
+		};
 
-window['__onGCastApiAvailable'] = function(isAvailable) {
-  if (isAvailable) {
-    initializeCastApi();
-  }
-};
+		doLaunch = function(receiver) {
+			if (!cv_activity) {
+				var request = new cast.LaunchRequest('AC14F871', receiver);
 
-  </script>
+				$killSwitch.prop('disabled', false);
 
+				cast_api.launch(request, onLaunch);
+			}
+		};
+
+		onLaunch = function(activity) {
+			if (activity.status === 'running') {
+				cv_activity = activity;
+				
+				cast_api.sendMessage(cv_activity.activityId, 'urn:x-cast:com.eerovil.chromecast-dashboard', {type: 'HelloWorld'});
+			}
+		};
+
+		$killSwitch.on('click', function() {
+			cast_api.stopActivity(cv_activity.activityId, function(){
+				cv_activity = null;
+			
+				$killSwitch.prop('disabled', true);
+			});
+		});
+	</script>
 </html>
