@@ -84,12 +84,15 @@ if (!window.location.href.startsWith('localhost')) {
             }
         }
     });
-
     // Cast api will automatically use castMediaElement as player
     const playerManager = context.getPlayerManager();
 
     const playerData = {};
     const playerDataBinder = new cast.framework.ui.PlayerDataBinder(playerData);
+
+    const options = new cast.framework.CastReceiverOptions();
+
+    options.disableIdleTimeout = true;
 
     context.start();
 }
