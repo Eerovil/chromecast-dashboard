@@ -1,88 +1,38 @@
-<html data-cast-api-enabled="true">
-	<head>
-		<title>Hello World Chrome Sender</title>
-	</head>
-	<body>
-		<div class="receiver-div">
-			<h3>Choose A Receiver</h3>
-			<ul class="receiver-list">
-				<li>Looking for receivers...</li>
-			</ul>
-		</div>
-		<button class="kill" disabled>Kill the Connection</button>
-	</body>
+<html>
+<head>
+  <title>Start</title>
+  <script src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
+</head>
+<body>
+  <google-cast-launcher></google-cast-launcher>
+  <script>
+  initializeCastApi = function() {
+    cast.framework.CastContext.getInstance().setOptions({
+      receiverApplicationId: 'AC14F871',
+      autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED
+    });
+  };
 
-	<script src="https://code.jquery.com/jquery-2.0.3.min.js"></script>
-	<script src="https://underscorejs.org/underscore-min.js"></script>
+  window['__onGCastApiAvailable'] = function(isAvailable) {
+    if (isAvailable) {
+      initializeCastApi();
+    }
+  };
 
-	<script>
-		var cast_api,
-			cv_activity,
-			receiverList,
-			$killSwitch = $('.kill');
+  function send() {
+    var textEl = document.getElementById("text");
+    sendText(textEl.value);
+  }
 
-		window.addEventListener('message', function(event) {
-			if (event.source === window && event.data &&
-					event.data.source === 'CastApi' &&
-					event.data.event === 'Hello') {
-				initializeApi();
-			}
-		});
-
-		initializeApi = function() {
-			if (!cast_api) {
-				cast_api = new cast.Api();
-				cast_api.addReceiverListener('AC14F871', onReceiverList);
-			}
-		};
-
-		onReceiverList = function(list) {
-			if (list.length > 0) {
-				receiverList = list;
-				$('.receiver-list').empty();
-				receiverList.forEach(function(receiver) {
-					$listItem = $('<li><a href="#" data-id="' + receiver.id + '">' + receiver.name + '</a></li>');
-					$listItem.on('click', receiverClicked);
-					$('.receiver-list').append($listItem);
-				});
-			}
-		};
-
-		receiverClicked = function(e) {
-			e.preventDefault();
-
-			var $target = $(e.target),
-				receiver = _.find(receiverList, function(receiver) {
-					return receiver.id === $target.data('id');
-				});
-
-			doLaunch(receiver);
-		};
-
-		doLaunch = function(receiver) {
-			if (!cv_activity) {
-				var request = new cast.LaunchRequest('AC14F871', receiver);
-
-				$killSwitch.prop('disabled', false);
-
-				cast_api.launch(request, onLaunch);
-			}
-		};
-
-		onLaunch = function(activity) {
-			if (activity.status === 'running') {
-				cv_activity = activity;
-				
-				cast_api.sendMessage(cv_activity.activityId, 'urn:x-cast:com.eerovil.chromecast-dashboard', {type: 'HelloWorld'});
-			}
-		};
-
-		$killSwitch.on('click', function() {
-			cast_api.stopActivity(cv_activity.activityId, function(){
-				cv_activity = null;
-			
-				$killSwitch.prop('disabled', true);
-			});
-		});
-	</script>
+  function sendText(txt) {
+    var castSession = cast.framework.CastContext.getInstance().getCurrentSession();
+    if (castSession) {
+      castSession.sendMessage('urn:x-cast:com.eerovil.chromecast-dashboard', {
+        type: "message",
+        text: txt
+      });
+    }
+  }
+  </script>
+</body>
 </html>

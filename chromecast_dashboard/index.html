@@ -7,8 +7,10 @@
 
   <!-- Post load all the goods used to interact with sender. -->
   <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
-  <script src="https://www.gstatic.com/cast/js/receiver/1.0/cast_receiver.js"></script>
 
+  <script type="text/javascript"
+      src="//www.gstatic.com/cast/sdk/libs/caf_receiver/v3/cast_receiver_framework.js">
+  </script>
 <style>
 body {
     width: 100%
@@ -56,28 +58,20 @@ span.info {
     <img class="img">
     </img>
 </div>
-<div class=".messages">
+<div id="message">
     Hello world!
 </div>
 <script>
 
 window.onload = function() {
 
-var receiver = new cast.receiver.Receiver('AC14F871', ['urn:x-cast:com.eerovil.chromecast-dashboard']),
-    channelHandler = new cast.receiver.ChannelHandler('urn:x-cast:com.eerovil.chromecast-dashboard'),
-    $messages = $('.messages'),
-    $body = $('body');
-
-channelHandler.addChannelFactory(
-    receiver.createChannelFactory('urn:x-cast:com.eerovil.chromecast-dashboard'));
-
-receiver.start();
-
-channelHandler.addEventListener(cast.receiver.Channel.EventType.MESSAGE, onMessage.bind(this));
-
-function onMessage(event) {
-    $messages.html(event.message.type);
-}
+const context = cast.framework.CastReceiverContext.getInstance();
+context.addCustomMessageListener('urn:x-cast:com.eerovil.chromecast-dashboard', function (customEvent) {
+    if (customEvent.data.type == "message") {
+    document.getElementById("message").innerHTML = customEvent.data.text;
+    }
+});
+context.start();
 
 var changeSecs = 10;
 var nextMedia;
