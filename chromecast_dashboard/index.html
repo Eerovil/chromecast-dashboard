@@ -51,7 +51,7 @@ span.info {
     </img>
 </div>
 <div id="right">
-    <video id="castMediaElement" class="video-1">
+    <video id="castMediaElement">
     Your browser does not support the video tag.
     </video>
     <span class="info">Test</span>
@@ -76,12 +76,16 @@ var player = document.querySelector("#castMediaElement")
 const context = cast.framework.CastReceiverContext.getInstance();
 context.addCustomMessageListener('urn:x-cast:com.eerovil.chromecast-dashboard', function (customEvent) {
     if (customEvent.data.type == "message") {
-    document.getElementById("message").innerHTML = customEvent.data.text;
+        document.getElementById("message").innerHTML = customEvent.data.text;
+        if (customEvent.data.text && customEvent.data.text.startsWith('https')) {
+            baseUrl = customEvent.data.text;
+            console.log("baseUrl updated to " + baseUrl)
+        }
     }
 });
 
 // Cast api will automatically use castMediaElement as player
-const player = context.getPlayerManager();
+const playerManager = context.getPlayerManager();
 
 const playerData = {};
 const playerDataBinder = new cast.framework.ui.PlayerDataBinder(playerData);
@@ -105,7 +109,6 @@ function initBoxes() {
             id: "left",
             currMedia: null,
             nextMedia: null,
-            videoIndex: "video-1",
             prevChange: null,  // Last changed
             nextMediaReady: true,
         },
@@ -113,15 +116,34 @@ function initBoxes() {
             id: "right",
             currMedia: null,
             nextMedia: null,
-            videoIndex: "video-1",
             prevChange: null,  // Last changed
             nextMediaReady: true,
         },
     ]
+
+    player.addEventListener('canplaythrough', function (event) {
+        let box = boxes[1];
+        if (box.nextMedia) {
+            box.nextMediaReady = true;
+            log("Box " + box.id + " video nextMediaReady.")
+        }
+    });
+
+    player.addEventListener('error', function (event) {
+        let box = boxes[1];
+        if (box.nextMedia) {
+            log("Box " + box.id + " video nextMedia error.")
+        } else if (box.currMedia) {
+            log("Box " + box.id + " video currMedia error.")
+            box.currMedia.error = true;
+        }
+    });
+
 }
 function buildFullUrl(mediaItem) {
     return mediaItem.baseUrl + "=w2048-h1024";
 }
+
 function preloadMediaItem(box) {
     if (box.nextMedia.mimeType.indexOf('image/') === 0) {
         (new Image()).src = buildFullUrl(box.nextMedia);
@@ -138,21 +160,7 @@ function preloadMediaItem(box) {
         box.nextMediaReady = true;
         const nextMediaId = box.nextMedia.id
         log("Box " + box.id + " (video) nextMedia = " + nextMediaId)
-        
-        // player.addEventListener('canplaythrough', function (event) {
-        //     if (box.nextMedia && box.nextMedia.id == nextMediaId) {
-        //         box.nextMediaReady = true;
-        //         log("Box " + box.id + " video nextMediaReady.")
-        //     }
-        // });
-        // player.addEventListener('error', function (event) {
-        //     if (box.nextMedia && box.nextMedia.id == nextMediaId) {
-        //         log("Box " + box.id + " video nextMedia error.")
-        //     } else if (box.currMedia && box.currMedia.id == nextMediaId) {
-        //         log("Box " + box.id + " video currMedia error.")
-        //         box.currMedia.error = true;
-        //     }
-        // });
+
     }
 }
 
