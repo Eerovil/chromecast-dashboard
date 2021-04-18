@@ -51,9 +51,7 @@ span.info {
     </img>
 </div>
 <div id="right">
-    <video id="player" class="video-1">
-    Your browser does not support the video tag.
-    </video>
+    <cast-media-player class="video-1"></cast-media-player>
     <span class="info">Test</span>
     <img class="img">
     </img>
@@ -78,7 +76,7 @@ var nextMedia;
 var turn = 'left';  // Which image/video will change
 var boxes = [];
 var baseUrl = "https://ahdintie-local.duckdns.org:8125/chromecast-dashboard";
-var player = document.querySelector("#player")
+var player = document.getElementsByTagName("cast-media-player")[0];
 
 function log(message) {
     console.log(message)
