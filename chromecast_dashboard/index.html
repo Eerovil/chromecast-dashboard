@@ -202,8 +202,12 @@ function mainLoop() {
         const elapsed = box.prevChange == null ? null : ((now.getTime() - box.prevChange.getTime()) / 1000.0)
         let shouldChange = (box.prevChange == null || elapsed > changeSecs)
         if (box.currMedia && box.currMedia.mimeType.indexOf('video/') === 0 && player.duration) {
-            shouldChange = shouldChange && elapsed > player.duration;
-            log("Video still playing: " + elapsed + " < " + player.duration)
+            let videoLength = player.duration;
+            if (videoLength > (60 * 5)) {
+                videoLength = (60 * 1)  // Show only 1 min of over 5 min videos
+            }
+            shouldChange = shouldChange && elapsed > videoLength;
+            log("Video still playing: " + elapsed + " < " + videoLength)
         }
         const hasError = (box.currMedia || {}).error
         if (box.nextMedia && (shouldChange || hasError)) {
