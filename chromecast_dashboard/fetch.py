@@ -71,6 +71,7 @@ def get_all_albums():
             if album_data['title'] in config['ALBUMS']:
                 print("Found album " + album_data['title'])
                 album_data['cached_media_items'] = []
+                album_data['cached_indexes'] = {'image': [], 'video': []}
                 album_data['config'] = config['ALBUMS'][album_data['title']]
                 albums.append(album_data)
                 albums_left.remove(album_data['title'])
@@ -115,6 +116,13 @@ def fetch_media_item(album, index=0):
         counter += 100
         if len(album['cached_media_items']) < counter:
             album['cached_media_items'] += data["mediaItems"]
+            cache_index = counter - 100
+            for media_item in data["mediaItems"]:
+                if media_item['mimeType'].startswith('video'):
+                    album['cached_indexes']['video'].append(cache_index)
+                else:
+                    album['cached_indexes']['image'].append(cache_index)
+                cache_index += 1
         page_token = data.get("nextPageToken", None)
         album['cached_page_token'] = page_token
         persist_cache()

@@ -60,26 +60,15 @@ def randomize_media(media_type="image"):
         app.logger.info("no albums")
         raise AttributeError()
 
-    total_media_count = 0
+    total_media_indexes = []
+    album_index = 0
     for album in albums:
-        total_media_count += (len(album["cached_media_items"]) - 1)
+        total_media_indexes += [(album_index, index) for index in album["cached_indexes"][media_type]]
+        album_index += 1
 
-    random_index = random.randint(0, total_media_count)
+    random_index = random.choice(total_media_indexes)
 
-    # random_index = 77
-
-    for album in albums:
-        count = len(album["cached_media_items"])
-        if random_index < count:
-            ret = fetch_media_item(album, random_index)
-            if ret['mimeType'].startswith(media_type):
-                return ret
-            else:
-                return randomize_media(media_type=media_type)
-        random_index -= count
-
-    app.logger.error("Failed to get random image!")
-    return None
+    return fetch_media_item(albums[random_index[0]], random_index[1])
 
 
 def fetch_media_item(album, index=0):
