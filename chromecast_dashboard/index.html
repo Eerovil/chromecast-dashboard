@@ -178,6 +178,7 @@ function fetchNext(box) {
     if (box.id == "right" && box.currMedia && box.currMedia.mimeType.match(/^image/)) {
         url = baseUrl + '/get_media?type=video'
     }
+    box.nextMedia = null;
     httpClient.get(url)
         .then(resp => {
             if (boxes.reduce((acc, box) => acc.concat([(box.currMedia || {}).id, (box.nextMedia || {}).id]), []).includes(resp.data.id)) {
@@ -189,7 +190,8 @@ function fetchNext(box) {
             preloadMediaItem(box)
         })
         .catch(err => {
-            // Don't try again, as we'll just try again in main loop
+            // Try again
+            setTimeout(() => {fetchNext(box)}, 2000)
             log(err)
         })
 }
