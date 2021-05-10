@@ -189,8 +189,7 @@ function fetchNext(box) {
             preloadMediaItem(box)
         })
         .catch(err => {
-            // Try again
-            setTimeout(() => {fetchNext(box)}, 1000)
+            // Don't try again, as we'll just try again in main loop
             log(err)
         })
 }
