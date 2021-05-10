@@ -125,7 +125,6 @@ def fetch_media_item(album, index=0):
                 cache_index += 1
         page_token = data.get("nextPageToken", None)
         album['cached_page_token'] = page_token
-        persist_cache()
         if index < 100 and index < len(data["mediaItems"]):
             ret = data["mediaItems"][index]
             break
@@ -135,6 +134,7 @@ def fetch_media_item(album, index=0):
         print("Not found item")
         return
 
+    persist_cache()
     print("Found mediaitem! (cache size %s)", len(album['cached_media_items']))
     print("%s", ret['id'])
     return ret
