@@ -4,7 +4,7 @@
 <title>Eeron Dashboard</title>
 <meta charset="utf-8">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js" integrity="sha512-bZS47S7sPOxkjU/4Bt0zrhEtWx0y0CRkhEp8IckzK+ltifIIE9EMIMTuT/mEzoIMewUINruDBIR/jJnbguonqQ==" crossorigin="anonymous"></script>
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js" integrity="sha512-WFN04846sdKMIP5LKNphMaWzU7YpMyCU245etK3g/2ARYbPK9Ub18eG+ljU96qKRCWh+quCY7yefSmlkQw1ANQ==" crossorigin="anonymous"></script>
   <!-- Post load all the goods used to interact with sender. -->
   <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
 
@@ -60,7 +60,7 @@ span.info {
     </img>
 </div>
 <div id="message">
-    Hello world!
+    Waiting for api key...
 </div>
 <script>
 
@@ -70,10 +70,13 @@ var changeSecs = 10;
 var nextMedia;
 var turn = 'left';  // Which image/video will change
 var boxes = [];
-var baseUrl = "https://ahdintie-local.duckdns.org:8125/chromecast-dashboard";
+var apiToken = null;
+var images = [];
+var videos = [];
+var albums = [];
 var player = document.querySelector("#castMediaElement")
 
-if (!window.location.href.startsWith('localhost')) {
+if (window.location.href.indexOf('localhost') == -1) {
     const context = cast.framework.CastReceiverContext.getInstance();
     context.addCustomMessageListener('urn:x-cast:com.eerovil.chromecast-dashboard', function (customEvent) {
         if (customEvent.data.type == "message") {
@@ -82,6 +85,14 @@ if (!window.location.href.startsWith('localhost')) {
                 baseUrl = customEvent.data.text;
                 log("baseUrl updated to " + baseUrl)
             }
+        }
+        if (customEvent.data.type == "apiToken") {
+            apiToken = customEvent.data.text;
+        }
+        if (customEvent.data.type == "albums") {
+            albums = JSON.parse(customEvent.data.text).map(albumId => ({id: albumId}));
+            images = [];
+            videos = [];
         }
     });
     // Cast api will automatically use castMediaElement as player
@@ -102,7 +113,6 @@ function log(message) {
         return;
     }
     console.log("local: ", message)
-    //axios.post(baseUrl + '/log', {message})
 }
 
 function errorHandler(msg, url, lineNo, columnNo, error) {
@@ -172,28 +182,19 @@ function preloadMediaItem(box) {
 }
 
 function fetchNext(box) {
-    const httpClient = axios.create();
-    httpClient.defaults.timeout = 5000;
-    let url = baseUrl + '/get_media?type=image';
-    if (box.id == "right" && box.currMedia && box.currMedia.mimeType.match(/^image/)) {
-        url = baseUrl + '/get_media?type=video'
-    }
     box.nextMedia = null;
-    httpClient.get(url)
-        .then(resp => {
-            if (boxes.reduce((acc, box) => acc.concat([(box.currMedia || {}).id, (box.nextMedia || {}).id]), []).includes(resp.data.id)) {
-                log("Got same media again")
-                setTimeout(() => {fetchNext(box)}, 500)
-                return;
-            }
-            box.nextMedia = resp.data
-            preloadMediaItem(box)
-        })
-        .catch(err => {
-            // Try again
-            setTimeout(() => {fetchNext(box)}, 2000)
-            log(err)
-        })
+    if (box.id == "right" && box.currMedia && box.currMedia.mimeType.match(/^image/)) {
+        // Get video
+        box.nextMedia = _.sample(videos)
+    } else {
+        // Get image
+        box.nextMedia = _.sample(images)
+    }
+    if (box.nextMedia) {
+        preloadMediaItem(box)
+    } else {
+        setTimeout(() => fetchNext(box), 1000)
+    }
 }
 
 function mainLoop() {
@@ -254,11 +255,61 @@ function mainLoop() {
     setTimeout(mainLoop, 500)
 }
 
-initBoxes();
-for (let box of boxes) {
-    fetchNext(box)
+function fetchPage() {
+    // Fetch a single page from all albums, then wait a bit and do it again.
+    const config = {
+        headers: { Authorization: `Bearer ${apiToken}` }
+    };
+    console.log(albums)
+    for (const album of albums) {
+        axios.post(
+            'https://photoslibrary.googleapis.com/v1/mediaItems:search',
+            {
+                "albumId": album.id,
+                "pageSize": "100",
+                "pageToken": (album.pageToken || ""),
+            },
+            config
+        ).then(resp => {
+            album.pageToken = resp.data.nextPageToken;
+            for (const mediaItem of resp.data.mediaItems) {
+                if (mediaItem.mimeType.startsWith('video')) {
+                    videos.push(mediaItem)
+                } else {
+                    images.push(mediaItem)
+                }
+            }
+            console.log(images)
+        })
+    }
+    // Wait longer for multiple albums to keep quota better
+    setTimeout(fetchPage, 10 * 1000 * albums.length);
 }
-mainLoop()
+
+waitForApiToken = new Promise((resolve, reject) => {
+    const checkApiToken = function() {
+        if (apiToken) {
+            resolve()
+        } else {
+            setTimeout(checkApiToken, 500)
+        }
+    }
+    checkApiToken()
+});
+
+waitForApiToken.then(() => {
+    initBoxes();
+    for (let box of boxes) {
+        fetchNext(box)
+    }
+    mainLoop()
+    fetchPage()
+})
+
+window.setData = function(_apiToken, _albums) {
+    apiToken = _apiToken;
+    albums = _albums;
+}
 
 };
 </script>
