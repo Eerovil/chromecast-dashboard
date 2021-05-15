@@ -15,6 +15,7 @@
 body {
     width: 100%;
     margin: 0;
+    background-color: black;
 }
 .video, .img {
     display: none;
@@ -43,11 +44,15 @@ span.info {
     right: 1rem;
     color: white;
 }
+#message {
+    color: white;
+    font-size: 3rem;
+}
 </style>
 </head>
 <body>
 <div id="left">
-    <span class="info">Test</span>
+    <span class="info"></span>
     <img class="img">
     </img>
 </div>
@@ -55,7 +60,7 @@ span.info {
     <video id="castMediaElement" class="video" loop>
     Your browser does not support the video tag.
     </video>
-    <span class="info">Test</span>
+    <span class="info"></span>
     <img class="img">
     </img>
 </div>
@@ -87,10 +92,12 @@ if (window.location.href.indexOf('localhost') == -1) {
             }
         }
         if (customEvent.data.type == "apiToken") {
+            console.log("Got api token!")
             apiToken = customEvent.data.text;
         }
         if (customEvent.data.type == "albums") {
             albums = JSON.parse(customEvent.data.text).map(albumId => ({id: albumId}));
+            console.log("Got albums:", albums)
             images = [];
             videos = [];
         }
@@ -288,7 +295,8 @@ function fetchPage() {
 
 waitForApiToken = new Promise((resolve, reject) => {
     const checkApiToken = function() {
-        if (apiToken) {
+        if (apiToken && albums.length > 0) {
+            document.querySelector("#message").innerHTML = ""
             resolve()
         } else {
             setTimeout(checkApiToken, 500)
