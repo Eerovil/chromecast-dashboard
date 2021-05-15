@@ -319,6 +319,16 @@ window.setData = function(_apiToken, _albums) {
     albums = _albums;
 }
 
+// empty arrays every 25min
+setTimeout(() => {
+    images = [];
+    videos = [];
+    // Clear pageToken
+    albums.forEach(album => {
+        album.pageToken = null;
+    })
+}, (25 * 60 * 1000))
+
 };
 </script>
 </body>
