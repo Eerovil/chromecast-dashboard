@@ -268,6 +268,10 @@ function fetchPage() {
         headers: { Authorization: `Bearer ${apiToken}` }
     };
     console.log(albums)
+    if (images.length > 5000) {
+        console.log("Stopping image fetch, more than 5000")
+        return;
+    }
     for (const album of albums) {
         axios.post(
             'https://photoslibrary.googleapis.com/v1/mediaItems:search',
@@ -286,7 +290,6 @@ function fetchPage() {
                     images.push(mediaItem)
                 }
             }
-            console.log(images)
         })
     }
     // Wait longer for multiple albums to keep quota better
