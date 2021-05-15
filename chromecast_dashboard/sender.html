@@ -124,7 +124,7 @@
         console.log("Sending albums: ", vueEl.__vue__.apiToken, albumsToSend)
         castSession.sendMessage('urn:x-cast:com.eerovil.chromecast-dashboard', {
           type: "albums",
-          text: albumsToSend,
+          text: JSON.stringify(albumsToSend),
         });
       }
     })
