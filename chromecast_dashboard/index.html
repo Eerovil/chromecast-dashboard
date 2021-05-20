@@ -79,6 +79,7 @@ var apiToken = null;
 var images = [];
 var videos = [];
 var albums = [];
+var fetchPageTimeout = null;
 var player = document.querySelector("#castMediaElement")
 
 if (window.location.href.indexOf('localhost') == -1) {
@@ -295,7 +296,7 @@ function fetchPage() {
         })
     }
     // Wait longer for multiple albums to keep quota better
-    setTimeout(fetchPage, 10 * 1000 * albums.length);
+    fetchPageTimeout = setTimeout(fetchPage, 10 * 1000 * albums.length);
 }
 
 waitForApiToken = new Promise((resolve, reject) => {
@@ -332,6 +333,10 @@ setTimeout(() => {
     albums.forEach(album => {
         album.pageToken = null;
     })
+    if (fetchPageTimeout){
+        clearTimeout(fetchPageTimeout)
+    }
+    fetchPage();
 }, (25 * 60 * 1000))
 
 };
