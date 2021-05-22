@@ -325,8 +325,7 @@ window.setData = function(_apiToken, _albums) {
     albums = _albums;
 }
 
-// empty arrays every 25min
-setTimeout(() => {
+window.resetData = function() {
     images = [];
     videos = [];
     // Clear pageToken
@@ -337,7 +336,10 @@ setTimeout(() => {
         clearTimeout(fetchPageTimeout)
     }
     fetchPage();
-}, (25 * 60 * 1000))
+}
+
+// empty arrays every 25min
+setTimeout(window.resetData, (25 * 60 * 1000))
 
 };
 </script>
