@@ -12,13 +12,17 @@
 
 <body>
   <div id="vue-app">
-    <div style="width: 150px; height: 150px;">
-      <google-cast-launcher></google-cast-launcher>
-    </div>
-    <button id="sign-in-or-out-button" style="margin-left: 25px">Sign In/Authorize</button>
-    <button id="revoke-access-button" style="display: none; margin-left: 25px">Revoke access</button>
+    <div style="display: flex; justify-content: flex-end; flex-wrap: wrap;">
+      <div style="width: 150px; height: 150px;">
+        <google-cast-launcher></google-cast-launcher>
+      </div>
+      <div>
+        <button id="sign-in-or-out-button" style="margin-left: 25px">Sign In/Authorize</button>
+        <button id="revoke-access-button" style="display: none; margin-left: 25px">Revoke access</button>
 
-    <div id="auth-status" style="display: inline; padding-left: 25px"></div>
+        <div id="auth-status" style="display: inline; padding-left: 25px"></div>
+      </div>
+    </div>
     <hr>
 
     <button id="send-data" style="margin-left: 25px">Send</button>
@@ -27,7 +31,7 @@
     display: flex;
     width: 100%;
     flex-wrap: wrap;">
-      <div v-for="album in albums">
+      <div v-for="album in albums" style="margin: 2rem;">
       <label :for="`checkbox-${album.id}`">
         <img style="width: 200px; height: 200px;" :src="album.coverPhotoBaseUrl" />
         <p>{{ album.title }}</p>
