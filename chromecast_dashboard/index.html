@@ -295,7 +295,7 @@ function fetchPage() {
     for (const album of albums) {
         let axiosPromise;
         if (album.pageToken == "stop") {
-            continue
+            continue;
         }
         if (album.id === "allMedia") {
             const pageTokenQuery = !!album.pageToken ? `&pageToken=${album.pageToken}` : '';
