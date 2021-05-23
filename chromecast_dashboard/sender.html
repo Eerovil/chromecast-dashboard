@@ -43,7 +43,7 @@
 
       data: () => ({
         apiToken: null,
-        albums: [],
+        albums: [{id: 'allMedia', title: 'Kaikki'}],
         selectedAlbums: {},
       }),
 
@@ -115,12 +115,13 @@
     $('#send-data').click(function() {
       var vueEl = document.querySelector('#vue-app')
       var castSession = cast.framework.CastContext.getInstance().getCurrentSession();
+      var albumsToSend = Object.entries(vueEl.__vue__.selectedAlbums).filter(entry => entry[1]).map(entry => entry[0])
+      console.log(albumsToSend)
       if (castSession) {
         castSession.sendMessage('urn:x-cast:com.eerovil.chromecast-dashboard', {
           type: "apiToken",
           text: vueEl.__vue__.apiToken,
         });
-        var albumsToSend = Object.entries(vueEl.__vue__.selectedAlbums).filter(entry => entry[1]).map(entry => entry[0])
         console.log("Sending albums: ", vueEl.__vue__.apiToken, albumsToSend)
         castSession.sendMessage('urn:x-cast:com.eerovil.chromecast-dashboard', {
           type: "albums",

@@ -276,15 +276,25 @@ function fetchPage() {
         return;
     }
     for (const album of albums) {
-        axios.post(
-            'https://photoslibrary.googleapis.com/v1/mediaItems:search',
-            {
-                "albumId": album.id,
-                "pageSize": "100",
-                "pageToken": (album.pageToken || ""),
-            },
-            config
-        ).then(resp => {
+        let axiosPromise;
+        if (album.id === "allMedia") {
+            const pageTokenQuery = !!album.pageToken ? `&pageToken=${album.pageToken}` : '';
+            axiosPromise = axios.get(
+                `https://photoslibrary.googleapis.com/v1/mediaItems?pageSize=100${pageTokenQuery}`,
+                config
+            )
+        } else {
+            axiosPromise = axios.post(
+                'https://photoslibrary.googleapis.com/v1/mediaItems:search',
+                {
+                    "albumId": album.id,
+                    "pageSize": "100",
+                    "pageToken": (album.pageToken || ""),
+                },
+                config
+            )
+        }
+        axiosPromise.then(resp => {
             album.pageToken = resp.data.nextPageToken;
             for (const mediaItem of resp.data.mediaItems) {
                 if (mediaItem.mimeType.startsWith('video')) {
