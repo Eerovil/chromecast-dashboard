@@ -193,12 +193,29 @@ function fetchNext(box) {
     box.nextMedia = null;
     if (box.id == "right" && box.currMedia && box.currMedia.mimeType.match(/^image/)) {
         // Get video
-        box.nextMedia = _.sample(videos)
+        let unPlayedVideos = videos.filter(mediaItem => !mediaItem.played)
+        if (unPlayedVideos.length == 0 && videos.length > 0) {
+            console.log("All videos played, resetting.")
+            videos.forEach(mediaItem => {
+                mediaItem.played = false;
+            })
+            unPlayedVideos = videos;
+        }
+        box.nextMedia = _.sample(unPlayedVideos)
     } else {
         // Get image
-        box.nextMedia = _.sample(images)
+        let unPlayedImages = images.filter(mediaItem => !mediaItem.played)
+        if (unPlayedImages.length == 0 && images.length > 0) {
+            console.log("All images played, resetting.")
+            images.forEach(mediaItem => {
+                mediaItem.played = false;
+            })
+            unPlayedImages = images;
+        }
+        box.nextMedia = _.sample(unPlayedImages)
     }
     if (box.nextMedia) {
+        box.nextMedia.played = true;
         preloadMediaItem(box)
     } else {
         setTimeout(() => fetchNext(box), 1000)
@@ -277,6 +294,9 @@ function fetchPage() {
     }
     for (const album of albums) {
         let axiosPromise;
+        if (album.pageToken == "stop") {
+            continue
+        }
         if (album.id === "allMedia") {
             const pageTokenQuery = !!album.pageToken ? `&pageToken=${album.pageToken}` : '';
             axiosPromise = axios.get(
@@ -296,6 +316,9 @@ function fetchPage() {
         }
         axiosPromise.then(resp => {
             album.pageToken = resp.data.nextPageToken;
+            if (!album.pageToken) {
+                album.pageToken = "stop";
+            }
             for (const mediaItem of resp.data.mediaItems) {
                 if (mediaItem.mimeType.startsWith('video')) {
                     videos.push(mediaItem)
