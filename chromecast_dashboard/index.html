@@ -78,6 +78,7 @@ var boxes = [];
 var apiToken = null;
 var images = [];
 var videos = [];
+var hiddenMediaIds = new Set();
 var albums = [];
 var fetchPageTimeout = null;
 var player = document.querySelector("#castMediaElement")
@@ -101,6 +102,11 @@ if (window.location.href.indexOf('localhost') == -1) {
             console.log("Got albums:", albums)
             images = [];
             videos = [];
+        }
+        if (customEvent.data.type == "hiddenAlbums") {
+            hiddenAlbums = JSON.parse(customEvent.data.text).map(albumId => ({id: albumId}));
+            console.log("Got hiddenAlbums:", hiddenAlbums)
+            hiddenMediaIds = new Set();
         }
     });
     // Cast api will automatically use castMediaElement as player
@@ -320,11 +326,38 @@ function fetchPage() {
                 album.pageToken = "stop";
             }
             for (const mediaItem of resp.data.mediaItems) {
+                if (hiddenMediaIds.has(mediaItem.id)) {
+                    console.log("Mediaitem hidden: ", mediaItem);
+                    continue;
+                }
                 if (mediaItem.mimeType.startsWith('video')) {
                     videos.push(mediaItem)
                 } else {
                     images.push(mediaItem)
                 }
+            }
+        })
+    }
+    for (const album of hiddenAlbums) {
+        let axiosPromise;
+        if (album.pageToken == "stop") {
+            continue;
+        }
+        axios.post(
+            'https://photoslibrary.googleapis.com/v1/mediaItems:search',
+            {
+                "albumId": album.id,
+                "pageSize": "100",
+                "pageToken": (album.pageToken || ""),
+            },
+            config
+        ).then(resp => {
+            album.pageToken = resp.data.nextPageToken;
+            if (!album.pageToken) {
+                album.pageToken = "stop";
+            }
+            for (const mediaItem of resp.data.mediaItems) {
+                hiddenMediaIds.add(mediaItem.id)
             }
         })
     }
@@ -353,9 +386,10 @@ waitForApiToken.then(() => {
     fetchPage()
 })
 
-window.setData = function(_apiToken, _albums) {
+window.setData = function(_apiToken, _albums, _hiddens) {
     apiToken = _apiToken;
     albums = _albums;
+    hiddenAlbums = _hiddens || [];
 }
 
 window.resetData = function() {
