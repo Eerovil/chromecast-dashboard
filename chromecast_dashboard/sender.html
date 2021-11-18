@@ -167,14 +167,16 @@
       clientId = prompt('Give your own clientId (recommended!)', DEFAULTCLIENTID);
     }
 
-    var newRelativePathQuery = new URL(
-      `${window.location.protocol}//${window.location.host}${window.location.pathname}`
-    );
-    let newParams = newRelativePathQuery.searchParams;
-    newParams.append('apiKey', apiKey);
-    newParams.append('clientId', clientId);
+    if (apiKey && clientId) {
+      var newRelativePathQuery = new URL(
+        `${window.location.protocol}//${window.location.host}${window.location.pathname}`
+      );
+      let newParams = newRelativePathQuery.searchParams;
+      newParams.append('apiKey', apiKey);
+      newParams.append('clientId', clientId);
 
-    history.pushState(null, "", newRelativePathQuery.toString());
+      history.pushState(null, "", newRelativePathQuery.toString());
+    }
 
     function handleClientLoad() {
       // Load the API's client and auth2 modules.
