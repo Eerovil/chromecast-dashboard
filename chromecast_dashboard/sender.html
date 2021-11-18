@@ -25,7 +25,11 @@
     </div>
     <hr>
 
-    <button id="send-data" style="margin-left: 25px">Send</button>
+    <button id="send-data" style="
+      margin-left: 25px;
+      height: 50px;
+      width: 100px;
+    ">Send</button>
 
     <div style="
     display: flex;
@@ -52,7 +56,7 @@
 
       data: () => ({
         apiToken: null,
-        albums: [{id: 'allMedia', title: 'Kaikki'}],
+        albums: [{id: 'allMedia', title: 'All photos'}],
         selectedAlbums: {},
         hiddenAlbums: {},
       }),
@@ -149,6 +153,29 @@
 
     var GoogleAuth;
     var SCOPE = "https://www.googleapis.com/auth/photoslibrary.readonly";
+    var DEFAULTAPIKEY = 'AIzaSyATUT6iWvPVnbrrGQ5UDMgtBV455gVJnBk';
+    var DEFAULTCLIENTID = '734651298434-6lukaeulk76bjmj4pkv456lt1bbd1f8v.apps.googleusercontent.com'
+
+    const urlSearchParams = new URLSearchParams(window.location.search);
+    const params = Object.fromEntries(urlSearchParams.entries());
+
+    let apiKey = params.apiKey;
+    let clientId = params.clientId;
+
+    if (!apiKey || !clientId || apiKey == DEFAULTAPIKEY) {
+      apiKey = prompt('Give your own api key (recommended!)', DEFAULTAPIKEY);
+      clientId = prompt('Give your own clientId (recommended!)', DEFAULTCLIENTID);
+    }
+
+    var newRelativePathQuery = new URL(
+      `${window.location.protocol}//${window.location.host}${window.location.pathname}`
+    );
+    let newParams = newRelativePathQuery.searchParams;
+    newParams.append('apiKey', apiKey);
+    newParams.append('clientId', clientId);
+
+    history.pushState(null, "", newRelativePathQuery.toString());
+
     function handleClientLoad() {
       // Load the API's client and auth2 modules.
       // Call the initClient function after the modules load.
@@ -163,8 +190,8 @@
       // Get API key and client ID from API Console.
       // 'scope' field specifies space-delimited list of access scopes.
       gapi.client.init({
-        'apiKey': 'AIzaSyATUT6iWvPVnbrrGQ5UDMgtBV455gVJnBk',
-        'clientId': '734651298434-6lukaeulk76bjmj4pkv456lt1bbd1f8v.apps.googleusercontent.com',
+        'apiKey': apiKey,
+        'clientId': clientId,
         'discoveryDocs': [discoveryUrl],
         'scope': SCOPE
       }).then(function () {
