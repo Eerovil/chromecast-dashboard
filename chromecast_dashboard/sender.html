@@ -1,0 +1,236 @@
+<html>
+
+<head>
+  <title>Start</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js"
+    integrity="sha512-bZS47S7sPOxkjU/4Bt0zrhEtWx0y0CRkhEp8IckzK+ltifIIE9EMIMTuT/mEzoIMewUINruDBIR/jJnbguonqQ=="
+    crossorigin="anonymous"></script>
+  <script src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12/dist/vue.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+</head>
+
+<body>
+  <div id="vue-app">
+    <div style="display: flex; justify-content: flex-end; flex-wrap: wrap;">
+      <div style="width: 150px; height: 150px;">
+        <google-cast-launcher></google-cast-launcher>
+      </div>
+      <div>
+        <button id="sign-in-or-out-button" style="margin-left: 25px">Sign In/Authorize</button>
+        <button id="revoke-access-button" style="display: none; margin-left: 25px">Revoke access</button>
+
+        <div id="auth-status" style="display: inline; padding-left: 25px"></div>
+      </div>
+    </div>
+    <hr>
+
+    <button id="send-data" style="margin-left: 25px">Send</button>
+
+    <div style="
+    display: flex;
+    width: 100%;
+    flex-wrap: wrap;">
+      <div v-for="album in albums" style="margin: 2rem;">
+      <label :for="`checkbox-${album.id}`">
+        <img style="width: 200px; height: 200px;" :src="album.coverPhotoBaseUrl" />
+        <p>{{ album.title }}</p>
+      </label>
+      <input :id="`checkbox-${album.id}`" type="checkbox" v-model="selectedAlbums[album.id]">
+      <br />
+      <label :for="`checkbox-hide-${album.id}`">
+        Piilota
+      </label>
+      <input :id="`checkbox-hide-${album.id}`" type="checkbox" v-model="hiddenAlbums[album.id]">
+      </div>
+    </div>
+  </div>
+  <script>
+
+    new Vue({
+      el: "#vue-app",
+
+      data: () => ({
+        apiToken: null,
+        albums: [{id: 'allMedia', title: 'Kaikki'}],
+        selectedAlbums: {},
+        hiddenAlbums: {},
+      }),
+
+      methods: {
+        async showAlbums() {
+          const config = {
+            headers: { Authorization: `Bearer ${this.apiToken}` }
+          };
+
+          let pageToken = "";
+
+          while (pageToken === "" || !!pageToken) {
+            await axios.get(
+              `https://photoslibrary.googleapis.com/v1/albums?pageSize=50${pageToken}`,
+              config
+            ).then(resp => resp.data).then(data => {
+              pageToken = null;
+              if (data && data.nextPageToken) {
+                pageToken = `&pageToken=${data.nextPageToken}`
+              }
+              return data.albums;
+            }).then(albums => {
+              albums.forEach(album => {
+                this.albums.push(album)
+              })
+              return albums
+            })
+          }
+
+          console.log(this.albums)
+        }
+      },
+
+      watch: {
+        apiToken() {
+          this.showAlbums();
+        }
+      }
+    })
+
+    initializeCastApi = function () {
+      cast.framework.CastContext.getInstance().setOptions({
+        receiverApplicationId: 'AC14F871',
+        autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED
+      });
+    };
+
+    window['__onGCastApiAvailable'] = function (isAvailable) {
+      if (isAvailable) {
+        initializeCastApi();
+      }
+    };
+
+    function send() {
+      var textEl = document.getElementById("text");
+      sendText(textEl.value);
+    }
+
+    function sendText(txt) {
+      var castSession = cast.framework.CastContext.getInstance().getCurrentSession();
+      if (castSession) {
+        castSession.sendMessage('urn:x-cast:com.eerovil.chromecast-dashboard', {
+          type: "message",
+          text: txt
+        });
+      }
+    }
+
+    $('#send-data').click(function() {
+      var vueEl = document.querySelector('#vue-app')
+      var castSession = cast.framework.CastContext.getInstance().getCurrentSession();
+      var albumsToSend = Object.entries(vueEl.__vue__.selectedAlbums).filter(entry => entry[1]).map(entry => entry[0])
+      var albumsToHide = Object.entries(vueEl.__vue__.hiddenAlbums).filter(entry => entry[1]).map(entry => entry[0])
+      console.log(albumsToSend)
+      console.log("albumsToHide: ", albumsToHide)
+      if (castSession) {
+        castSession.sendMessage('urn:x-cast:com.eerovil.chromecast-dashboard', {
+          type: "apiToken",
+          text: vueEl.__vue__.apiToken,
+        });
+        console.log("Sending albums: ", vueEl.__vue__.apiToken, albumsToSend)
+        castSession.sendMessage('urn:x-cast:com.eerovil.chromecast-dashboard', {
+          type: "albums",
+          text: JSON.stringify(albumsToSend),
+        });
+        console.log("Sending hiddenalbums: ", vueEl.__vue__.apiToken, albumsToSend)
+        castSession.sendMessage('urn:x-cast:com.eerovil.chromecast-dashboard', {
+          type: "hiddenAlbums",
+          text: JSON.stringify(albumsToHide),
+        });
+      }
+    })
+
+    var GoogleAuth;
+    var SCOPE = "https://www.googleapis.com/auth/photoslibrary.readonly";
+    function handleClientLoad() {
+      // Load the API's client and auth2 modules.
+      // Call the initClient function after the modules load.
+      gapi.load('client:auth2', initClient);
+    }
+
+    function initClient() {
+      // In practice, your app can retrieve one or more discovery documents.
+      var discoveryUrl = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
+
+      // Initialize the gapi.client object, which app uses to make API requests.
+      // Get API key and client ID from API Console.
+      // 'scope' field specifies space-delimited list of access scopes.
+      gapi.client.init({
+        'apiKey': 'AIzaSyATUT6iWvPVnbrrGQ5UDMgtBV455gVJnBk',
+        'clientId': '734651298434-6lukaeulk76bjmj4pkv456lt1bbd1f8v.apps.googleusercontent.com',
+        'discoveryDocs': [discoveryUrl],
+        'scope': SCOPE
+      }).then(function () {
+        GoogleAuth = gapi.auth2.getAuthInstance();
+
+        // Listen for sign-in state changes.
+        GoogleAuth.isSignedIn.listen(updateSigninStatus);
+
+        // Handle initial sign-in state. (Determine if user is already signed in.)
+        var user = GoogleAuth.currentUser.get();
+        setSigninStatus();
+
+        // Call handleAuthClick function when user clicks on
+        //      "Sign In/Authorize" button.
+        $('#sign-in-or-out-button').click(function () {
+          handleAuthClick();
+        });
+        $('#revoke-access-button').click(function () {
+          revokeAccess();
+        });
+      });
+    }
+
+    function handleAuthClick() {
+      if (GoogleAuth.isSignedIn.get()) {
+        // User is authorized and has clicked "Sign out" button.
+        GoogleAuth.signOut();
+      } else {
+        // User is not signed in. Start Google auth flow.
+        GoogleAuth.signIn();
+      }
+    }
+
+    function revokeAccess() {
+      GoogleAuth.disconnect();
+    }
+
+    function setSigninStatus() {
+      var user = GoogleAuth.currentUser.get();
+      var isAuthorized = user.hasGrantedScopes(SCOPE);
+      if (isAuthorized) {
+        $('#sign-in-or-out-button').html('Sign out');
+        $('#revoke-access-button').css('display', 'inline-block');
+        $('#auth-status').html('You are currently signed in and have granted ' +
+          'access to this app.');
+        const authResponse = user.getAuthResponse(true);
+        const apiToken = authResponse.access_token
+
+        document.querySelector('#vue-app').__vue__.apiToken = apiToken
+      } else {
+        $('#sign-in-or-out-button').html('Sign In/Authorize');
+        $('#revoke-access-button').css('display', 'none');
+        $('#auth-status').html('You have not authorized this app or you are ' +
+          'signed out.');
+      }
+    }
+
+    function updateSigninStatus() {
+      setSigninStatus();
+    }
+
+
+  </script>
+  <script async defer src="https://apis.google.com/js/api.js" onload="this.onload=function(){};handleClientLoad()"
+    onreadystatechange="if (this.readyState === 'complete') this.onload()">
+    </script>
+</body>
+
+</html>

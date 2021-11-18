@@ -4,16 +4,24 @@
 <title>Eeron Dashboard</title>
 <meta charset="utf-8">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js" integrity="sha512-bZS47S7sPOxkjU/4Bt0zrhEtWx0y0CRkhEp8IckzK+ltifIIE9EMIMTuT/mEzoIMewUINruDBIR/jJnbguonqQ==" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js" integrity="sha512-WFN04846sdKMIP5LKNphMaWzU7YpMyCU245etK3g/2ARYbPK9Ub18eG+ljU96qKRCWh+quCY7yefSmlkQw1ANQ==" crossorigin="anonymous"></script>
+  <!-- Post load all the goods used to interact with sender. -->
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
 
+  <script type="text/javascript"
+      src="//www.gstatic.com/cast/sdk/libs/caf_receiver/v3/cast_receiver_framework.js">
+  </script>
 <style>
 body {
-    width: 100%
+    width: 100%;
+    margin: 0;
+    background-color: black;
 }
-.video-1, .video-2, .img {
+.video, .img {
     display: none;
-    height: 100%
+    height: 100%;
 }
-.video-1 {
+.video {
     z-index: 9999;
 }
 #left, #right {
@@ -36,31 +44,93 @@ span.info {
     right: 1rem;
     color: white;
 }
+#message {
+    color: white;
+    font-size: 3rem;
+}
 </style>
 </head>
 <body>
 <div id="left">
-    <span class="info">Test</span>
+    <span class="info"></span>
     <img class="img">
     </img>
 </div>
 <div id="right">
-    <span class="info">Test</span>
+    <video id="castMediaElement" class="video" loop>
+    Your browser does not support the video tag.
+    </video>
+    <span class="info"></span>
     <img class="img">
     </img>
 </div>
+<div id="message">
+    Waiting for api key...
+</div>
 <script>
+
+window.onload = function() {
+
 var changeSecs = 10;
 var nextMedia;
 var turn = 'left';  // Which image/video will change
 var boxes = [];
+var apiToken = null;
+var images = [];
+var videos = [];
+var hiddenMediaIds = new Set();
+var albums = [];
+var fetchPageTimeout = null;
+var player = document.querySelector("#castMediaElement")
+
+if (window.location.href.indexOf('localhost') == -1) {
+    const context = cast.framework.CastReceiverContext.getInstance();
+    context.addCustomMessageListener('urn:x-cast:com.eerovil.chromecast-dashboard', function (customEvent) {
+        if (customEvent.data.type == "message") {
+            document.getElementById("message").innerHTML = customEvent.data.text;
+            if (customEvent.data.text && customEvent.data.text.startsWith('https')) {
+                baseUrl = customEvent.data.text;
+                log("baseUrl updated to " + baseUrl)
+            }
+        }
+        if (customEvent.data.type == "apiToken") {
+            console.log("Got api token!")
+            apiToken = customEvent.data.text;
+        }
+        if (customEvent.data.type == "albums") {
+            albums = JSON.parse(customEvent.data.text).map(albumId => ({id: albumId}));
+            console.log("Got albums:", albums)
+            images = [];
+            videos = [];
+        }
+        if (customEvent.data.type == "hiddenAlbums") {
+            hiddenAlbums = JSON.parse(customEvent.data.text).map(albumId => ({id: albumId}));
+            console.log("Got hiddenAlbums:", hiddenAlbums)
+            hiddenMediaIds = new Set();
+        }
+    });
+    // Cast api will automatically use castMediaElement as player
+    const playerManager = context.getPlayerManager();
+
+    const playerData = {};
+    const playerDataBinder = new cast.framework.ui.PlayerDataBinder(playerData);
+
+    const options = new cast.framework.CastReceiverOptions();
+
+    options.disableIdleTimeout = true;
+
+    context.start(options);
+}
+
 function log(message) {
-    console.log(message)
-    axios.post('/log', {message})
+    if (message.indexOf(' left') > -1) {
+        return;
+    }
+    console.log("local: ", message)
 }
 
 function errorHandler(msg, url, lineNo, columnNo, error) {
-    log("Error! " + msg)
+    log("Error! " + msg + " " + url + " " + lineNo)
 }
 
 window.onerror = errorHandler;
@@ -71,7 +141,6 @@ function initBoxes() {
             id: "left",
             currMedia: null,
             nextMedia: null,
-            videoIndex: "video-1",
             prevChange: null,  // Last changed
             nextMediaReady: true,
         },
@@ -79,15 +148,34 @@ function initBoxes() {
             id: "right",
             currMedia: null,
             nextMedia: null,
-            videoIndex: "video-1",
             prevChange: null,  // Last changed
             nextMediaReady: true,
         },
     ]
+
+    player.addEventListener('canplaythrough', function (event) {
+        let box = boxes[1];
+        if (box.nextMedia) {
+            box.nextMediaReady = true;
+            log("Box " + box.id + " video nextMediaReady.")
+        }
+    });
+
+    player.addEventListener('error', function (event) {
+        let box = boxes[1];
+        if (box.nextMedia) {
+            log("Box " + box.id + " video nextMedia error.")
+        } else if (box.currMedia) {
+            log("Box " + box.id + " video currMedia error.")
+            box.currMedia.error = true;
+        }
+    });
+
 }
 function buildFullUrl(mediaItem) {
     return mediaItem.baseUrl + "=w2048-h1024";
 }
+
 function preloadMediaItem(box) {
     if (box.nextMedia.mimeType.indexOf('image/') === 0) {
         (new Image()).src = buildFullUrl(box.nextMedia);
@@ -96,57 +184,48 @@ function preloadMediaItem(box) {
     } else if (box.nextMedia.mimeType.indexOf('video/') === 0) {
         // Load video in background
         const boxEl = document.querySelector('#' + box.id)
-        const nextVideoEl = document.createElement('VIDEO')
-        nextVideoEl.classList.add('video-1')
-        nextVideoEl.setAttribute('loop', '')
-        nextVideoEl.setAttribute('muted', '')
-        nextVideoEl.setAttribute('src', box.nextMedia.baseUrl + "=dv")
-        nextVideoEl.setAttribute('type', box.nextMedia.mimeType)
-        boxEl.appendChild(nextVideoEl)
-        nextVideoEl.load()
-        box.nextMediaReady = false;
+        player.setAttribute('loop', '')
+        player.setAttribute('src', box.nextMedia.baseUrl + "=dv")
+        player.setAttribute('type', box.nextMedia.mimeType)
+        player.load()
+        box.nextMediaReady = true;
         const nextMediaId = box.nextMedia.id
         log("Box " + box.id + " (video) nextMedia = " + nextMediaId)
-        nextVideoEl.addEventListener('canplaythrough', function (event) {
-            if (box.nextMedia && box.nextMedia.id == nextMediaId) {
-                box.nextMediaReady = true;
-                log("Box " + box.id + " video nextMediaReady.")
-            }
-        });
-        nextVideoEl.addEventListener('error', function (event) {
-            if (box.nextMedia && box.nextMedia.id == nextMediaId) {
-                log("Box " + box.id + " video nextMedia error.")
-            } else if (box.currMedia && box.currMedia.id == nextMediaId) {
-                log("Box " + box.id + " video currMedia error.")
-                box.currMedia.error = true;
-            }
-        });
+
     }
 }
 
 function fetchNext(box) {
-    const httpClient = axios.create();
-    httpClient.defaults.timeout = 5000;
-    let url = '/get_image';
+    box.nextMedia = null;
     if (box.id == "right" && box.currMedia && box.currMedia.mimeType.match(/^image/)) {
-        url = '/get_video'
+        // Get video
+        let unPlayedVideos = videos.filter(mediaItem => !mediaItem.played)
+        if (unPlayedVideos.length == 0 && videos.length > 0) {
+            console.log("All videos played, resetting.")
+            videos.forEach(mediaItem => {
+                mediaItem.played = false;
+            })
+            unPlayedVideos = videos;
+        }
+        box.nextMedia = _.sample(unPlayedVideos)
+    } else {
+        // Get image
+        let unPlayedImages = images.filter(mediaItem => !mediaItem.played)
+        if (unPlayedImages.length == 0 && images.length > 0) {
+            console.log("All images played, resetting.")
+            images.forEach(mediaItem => {
+                mediaItem.played = false;
+            })
+            unPlayedImages = images;
+        }
+        box.nextMedia = _.sample(unPlayedImages)
     }
-    httpClient.get(url)
-        .then(resp => {
-            console.log(boxes.reduce((acc, box) => acc.concat([(box.currMedia || {}).id, (box.nextMedia || {}).id]), []))
-            if (boxes.reduce((acc, box) => acc.concat([(box.currMedia || {}).id, (box.nextMedia || {}).id]), []).includes(resp.data.id)) {
-                console.log("Got same media again")
-                setTimeout(() => {fetchNext(box)}, 500)
-                return;
-            }
-            box.nextMedia = resp.data
-            preloadMediaItem(box)
-        })
-        .catch(err => {
-            // Try again
-            setTimeout(() => {fetchNext(box)}, 1000)
-            console.log(err)
-        })
+    if (box.nextMedia) {
+        box.nextMedia.played = true;
+        preloadMediaItem(box)
+    } else {
+        setTimeout(() => fetchNext(box), 1000)
+    }
 }
 
 function mainLoop() {
@@ -155,9 +234,12 @@ function mainLoop() {
         const now = new Date();
         const elapsed = box.prevChange == null ? null : ((now.getTime() - box.prevChange.getTime()) / 1000.0)
         let shouldChange = (box.prevChange == null || elapsed > changeSecs)
-        if (box.currMedia && box.currMedia.mimeType.indexOf('video/') === 0) {
-            let videoEl = document.querySelector("#" + box.id + " ." + box.videoIndex)
-            shouldChange = shouldChange && elapsed > videoEl.duration;
+        if (box.currMedia && box.currMedia.mimeType.indexOf('video/') === 0 && player.duration) {
+            let videoLength = player.duration;
+            if (videoLength > (60 * 5)) {
+                videoLength = (60 * 1)  // Show only 1 min of over 5 min videos
+            }
+            shouldChange = shouldChange && elapsed > videoLength;
         }
         const hasError = (box.currMedia || {}).error
         if (box.nextMedia && (shouldChange || hasError)) {
@@ -174,36 +256,20 @@ function mainLoop() {
                 box.prevChange = new Date();
                 let imageEl = document.querySelector("#" + box.id + " .img")
                 if (box.currMedia.mimeType.indexOf('video/') === 0) {
-                    let videoEl = document.querySelector("#" + box.id + " ." + box.videoIndex)
+                    log("Displaying video for box " + box.id)
                     imageEl.style.display = "none";
-                    videoEl.style.display = 'inline';
-                    videoEl.muted = true;
-                    videoEl.play()
-                    setTimeout(() => {
-                        // Unmute
-                        videoEl.muted = false;
-                        videoEl.removeAttribute('muted');
-                        if (videoEl.paused) {
-                            // Crap, fall back!
-                            videoEl.muted = true;
-                            videoEl.setAttribute('muted', '');
-                            videoEl.play();
-                        }
-                    }, 10)
+                    player.style.display = 'inline';
+                    const aspectRatio = (box.currMedia.mediaMetadata.width / box.currMedia.mediaMetadata.height);
+                    player.style.width = `${window.innerHeight * aspectRatio}px`
+                    player.play()
+                    console.log(box.currMedia)
                 } else {
+                    log("Displaying image for box " + box.id)
                     imageEl.style.display = "inline";
                     imageEl.setAttribute('src', buildFullUrl(box.currMedia))
-                    let prevVideoEl = document.querySelector("#" + box.id + " ." + box.videoIndex)
-                    if (prevVideoEl) {
-                        prevVideoEl.style.display = "none";
-                        if (prevVideoEl.stop != undefined) {
-                            prevVideoEl.pause();
-                            prevVideoEl.firstElementChild.removeAttribute('src'); // empty source
-                            prevVideoEl.removeAttribute('src'); // empty source
-                            prevVideoEl.load();
-                            prevVideoEl.remove();
-                        }
-                        prevVideoEl.remove();
+                    if (box.id == "right") {
+                        player.style.display = 'none';
+                        player.pause();
                     }
                 }
             } else {
@@ -222,12 +288,127 @@ function mainLoop() {
     setTimeout(mainLoop, 500)
 }
 
-initBoxes();
-for (let box of boxes) {
-    fetchNext(box)
+function fetchPage() {
+    // Fetch a single page from all albums, then wait a bit and do it again.
+    const config = {
+        headers: { Authorization: `Bearer ${apiToken}` }
+    };
+    console.log(albums)
+    if (images.length > 5000) {
+        console.log("Stopping image fetch, more than 5000")
+        return;
+    }
+    for (const album of albums) {
+        let axiosPromise;
+        if (album.pageToken == "stop") {
+            continue;
+        }
+        if (album.id === "allMedia") {
+            const pageTokenQuery = !!album.pageToken ? `&pageToken=${album.pageToken}` : '';
+            axiosPromise = axios.get(
+                `https://photoslibrary.googleapis.com/v1/mediaItems?pageSize=100${pageTokenQuery}`,
+                config
+            )
+        } else {
+            axiosPromise = axios.post(
+                'https://photoslibrary.googleapis.com/v1/mediaItems:search',
+                {
+                    "albumId": album.id,
+                    "pageSize": "100",
+                    "pageToken": (album.pageToken || ""),
+                },
+                config
+            )
+        }
+        axiosPromise.then(resp => {
+            album.pageToken = resp.data.nextPageToken;
+            if (!album.pageToken) {
+                album.pageToken = "stop";
+            }
+            for (const mediaItem of resp.data.mediaItems) {
+                if (hiddenMediaIds.has(mediaItem.id)) {
+                    console.log("Mediaitem hidden: ", mediaItem);
+                    continue;
+                }
+                if (mediaItem.mimeType.startsWith('video')) {
+                    videos.push(mediaItem)
+                } else {
+                    images.push(mediaItem)
+                }
+            }
+        })
+    }
+    for (const album of hiddenAlbums) {
+        let axiosPromise;
+        if (album.pageToken == "stop") {
+            continue;
+        }
+        axios.post(
+            'https://photoslibrary.googleapis.com/v1/mediaItems:search',
+            {
+                "albumId": album.id,
+                "pageSize": "100",
+                "pageToken": (album.pageToken || ""),
+            },
+            config
+        ).then(resp => {
+            album.pageToken = resp.data.nextPageToken;
+            if (!album.pageToken) {
+                album.pageToken = "stop";
+            }
+            for (const mediaItem of resp.data.mediaItems) {
+                hiddenMediaIds.add(mediaItem.id)
+            }
+        })
+    }
+    // Wait longer for multiple albums to keep quota better
+    fetchPageTimeout = setTimeout(fetchPage, 10 * 1000 * albums.length);
 }
-mainLoop()
 
+waitForApiToken = new Promise((resolve, reject) => {
+    const checkApiToken = function() {
+        if (apiToken && albums.length > 0) {
+            document.querySelector("#message").innerHTML = ""
+            resolve()
+        } else {
+            setTimeout(checkApiToken, 500)
+        }
+    }
+    checkApiToken()
+});
+
+waitForApiToken.then(() => {
+    initBoxes();
+    for (let box of boxes) {
+        fetchNext(box)
+    }
+    mainLoop()
+    fetchPage()
+})
+
+window.setData = function(_apiToken, _albums, _hiddens) {
+    apiToken = _apiToken;
+    albums = _albums;
+    hiddenAlbums = _hiddens || [];
+}
+
+window.resetData = function() {
+    images = [];
+    videos = [];
+    // Clear pageToken
+    albums.forEach(album => {
+        album.pageToken = null;
+    })
+    if (fetchPageTimeout){
+        clearTimeout(fetchPageTimeout)
+    }
+    fetchPage();
+}
+
+// empty arrays every 25min
+setTimeout(window.resetData, (25 * 60 * 1000))
+
+};
 </script>
 </body>
 </html>
