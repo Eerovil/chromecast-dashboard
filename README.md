@@ -9,8 +9,8 @@ So I made my own chromecast app that also displays videos as well!
 Here's how it works:
 
 1. (Optional) Create a new project at https://console.cloud.google.com/
-  1a: Enable the Google Photos API
-  1b: Create a new api key
+    1. Enable the Google Photos API
+    2. Create a new api key
 2. Go to this repo's github pages/sender.html at https://eerovil.github.io/chromecast-dashboard/chromecast_dashboard/sender.html
 3. Input your own api key + clientID (Or use my keys, the quota may or may not be over the limit)
 4. Click "Sign in" and allow access to Google Photos for the app.
