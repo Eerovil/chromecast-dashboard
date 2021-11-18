@@ -22,3 +22,8 @@ The sender application will then send your api token to the chromecast. The Chro
 
 Every other switch the media on the right side will be a video. It will be looped for some time, or played fully if it's under 5 minutes.
 
+# TODO
+
+* Modifiable timeout per image shown
+* Better handling of different aspect ratios
+* Something happens after 1 hour and the images/videos start breaking
