@@ -16,7 +16,8 @@ Here's how it works:
 4. Click "Sign in" and allow access to Google Photos for the app.
 5. Connect to your chromecast using the big chromecast button.
 6. Select albums to show in the ambient. If you check the "hidden" box, any media in that album will not be shown (useful for "All photos")
-6. Click "Send".
+7. Click "Send".
+8. Modify timeout to your preference
 
 The sender application will then send your api token to the chromecast. The Chromecast will fetch media and display two items for 10 seconds, then switch.
 
@@ -24,7 +25,6 @@ Every other switch the media on the right side will be a video. It will be loope
 
 # TODO
 
-* Modifiable timeout per image shown
 * Better handling of different aspect ratios
 * Something happens after 1 hour and the images/videos start breaking
 * Muting videos is not working (Some videos are muted, others are not. This is apparently a Chrome bug)
