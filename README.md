@@ -27,3 +27,4 @@ Every other switch the media on the right side will be a video. It will be loope
 * Modifiable timeout per image shown
 * Better handling of different aspect ratios
 * Something happens after 1 hour and the images/videos start breaking
+* Muting videos is not working (Some videos are muted, others are not. This is apparently a Chrome bug)
