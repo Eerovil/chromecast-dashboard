@@ -109,6 +109,19 @@ if (window.location.href.indexOf('localhost') == -1) {
             console.log("Got hiddenAlbums:", hiddenAlbums)
             hiddenMediaIds = new Set();
         }
+        if (customEvent.data.type == "timeout") {
+            console.log("Got timeout:", customEvent.data.text)
+            changeSecs = parseInt(customEvent.data.text) || 10
+        }
+        if (customEvent.data.type == "skip") {
+            console.log("Got skip")
+            // Set "error" for both boxes
+            for (const box of boxes) {
+                if (box.currMedia) {
+                    box.currMedia.error = "skip";
+                }
+            }
+        }
     });
     // Cast api will automatically use castMediaElement as player
     const playerManager = context.getPlayerManager();
