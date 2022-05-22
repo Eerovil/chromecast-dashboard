@@ -188,7 +188,7 @@
       if (castSession) {
         castSession.sendMessage('urn:x-cast:com.eerovil.chromecast-dashboard', {
           type: "random",
-          text: $('#set-random').val() ? "true" : "false",
+          text: $('#set-random:checked').val() ? "true" : "false",
         });
       }
     })

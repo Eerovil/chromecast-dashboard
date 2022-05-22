@@ -49,9 +49,15 @@ span.info {
     color: white;
     font-size: 3rem;
 }
+#infobox {
+    position: fixed;
+    top: 10px;
+    bottom: 10px;
+}
 </style>
 </head>
 <body>
+    <div id="infobox"></div>
 <div id="left">
     <span class="info"></span>
     <img class="img">
@@ -84,6 +90,17 @@ var hiddenMediaIds = new Set();
 var albums = [];
 var fetchPageTimeout = null;
 var player = document.querySelector("#castMediaElement")
+var infoBox = document.querySelector("#infobox")
+
+function infoBoxLog(text) {
+    infoBox.innerHTML = text;
+    infoBox.style.display = 'block';
+    setTimeout(() => {
+        if (infoBox.innerHTML === text) {
+            infoBox.style.display = 'none';
+        }
+    }, 2000)
+}
 
 if (window.location.href.indexOf('localhost') == -1) {
     const context = cast.framework.CastReceiverContext.getInstance();
@@ -96,30 +113,30 @@ if (window.location.href.indexOf('localhost') == -1) {
             }
         }
         if (customEvent.data.type == "apiToken") {
-            console.log("Got api token!")
+            infoBoxLog("Got api token!")
             apiToken = customEvent.data.text;
         }
         if (customEvent.data.type == "albums") {
             albums = JSON.parse(customEvent.data.text).map(albumId => ({id: albumId}));
-            console.log("Got albums:", albums)
+            infoBoxLog("Got albums:", albums)
             images = [];
             videos = [];
         }
         if (customEvent.data.type == "random") {
-            console.log("Got random:", customEvent.data.text)
+            infoBoxLog("Got random:", customEvent.data.text)
             randomMode = customEvent.data.text == "true";
         }
         if (customEvent.data.type == "hiddenAlbums") {
             hiddenAlbums = JSON.parse(customEvent.data.text).map(albumId => ({id: albumId}));
-            console.log("Got hiddenAlbums:", hiddenAlbums)
+            infoBoxLog("Got hiddenAlbums:", hiddenAlbums)
             hiddenMediaIds = new Set();
         }
         if (customEvent.data.type == "timeout") {
-            console.log("Got timeout:", customEvent.data.text)
+            infoBoxLog("Got timeout:", customEvent.data.text)
             changeSecs = parseInt(customEvent.data.text) || 10
         }
         if (customEvent.data.type == "skip") {
-            console.log("Got skip")
+            infoBoxLog("Got skip")
             // Set "error" for both boxes
             for (const box of boxes) {
                 if (box.currMedia) {
