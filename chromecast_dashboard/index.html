@@ -91,6 +91,25 @@ var albums = [];
 var fetchPageTimeout = null;
 var player = document.querySelector("#castMediaElement")
 var infoBox = document.querySelector("#infobox")
+var pixelsLeft = 0;  // How many pixels are left for the left side.
+
+
+function updatePixelsLeft(rightWidth) {
+    if (rightWidth != undefined) {
+        pixelsLeft = window.innerWidth - (rightWidth);
+    }
+    const box = boxes.filter(box => (box.id == "left"))[0];
+
+    const aspectRatio = (box.currMedia.mediaMetadata.width / box.currMedia.mediaMetadata.height);
+    if ((window.innerHeight * aspectRatio) > pixelsLeft) {
+        box.currMedia.played = false; // Allow this to play later/next/whenever possible.
+        document.querySelector("#left").style.display = 'none';
+        console.log(`Hidden too wide left side img (${window.innerHeight * aspectRatio} > ${pixelsLeft})`)
+    } else {
+        document.querySelector("#left").style.display = 'block';
+    }
+}
+
 
 function infoBoxLog(text) {
     infoBox.innerHTML = text;
@@ -159,8 +178,12 @@ if (window.location.href.indexOf('localhost') == -1) {
 }
 
 function log(message) {
-    if (message.indexOf(' left') > -1) {
-        return;
+    try {
+        if (message.indexOf(' left') > -1) {
+            return;
+        }
+    } catch (err) {
+
     }
     console.log("local: ", message)
 }
@@ -305,6 +328,8 @@ function mainLoop() {
                     player.style.display = 'inline';
                     const aspectRatio = (box.currMedia.mediaMetadata.width / box.currMedia.mediaMetadata.height);
                     player.style.width = `${window.innerHeight * aspectRatio}px`
+
+                    updatePixelsLeft(window.innerHeight * aspectRatio)
                     player.play()
                     console.log(box.currMedia)
                 } else {
@@ -314,6 +339,10 @@ function mainLoop() {
                     if (box.id == "right") {
                         player.style.display = 'none';
                         player.pause();
+                        const aspectRatio = (box.currMedia.mediaMetadata.width / box.currMedia.mediaMetadata.height);
+                        updatePixelsLeft(window.innerHeight * aspectRatio)
+                    } else {
+                        updatePixelsLeft()
                     }
                 }
             } else {
