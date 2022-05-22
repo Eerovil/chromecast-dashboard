@@ -39,6 +39,12 @@
     width: 100px;
     ">Set timeout</button>
 
+    <input id="set-random" type="checkbox" style="
+    margin: 25px;
+    height: 50px;
+    width: 100px;
+    ">random mode</input>
+
     <button id="skip-media" style="
     margin: 25px;
     height: 50px;
@@ -173,6 +179,16 @@
         castSession.sendMessage('urn:x-cast:com.eerovil.chromecast-dashboard', {
           type: "timeout",
           text: timeout,
+        });
+      }
+    })
+
+    $('#set-random').change(function(event) {
+      var castSession = cast.framework.CastContext.getInstance().getCurrentSession();
+      if (castSession) {
+        castSession.sendMessage('urn:x-cast:com.eerovil.chromecast-dashboard', {
+          type: "random",
+          text: $('#set-random').val() ? "true" : "false",
         });
       }
     })

@@ -73,6 +73,7 @@ span.info {
 window.onload = function() {
 
 var changeSecs = 10;
+var randomMode = true;
 var nextMedia;
 var turn = 'left';  // Which image/video will change
 var boxes = [];
@@ -103,6 +104,10 @@ if (window.location.href.indexOf('localhost') == -1) {
             console.log("Got albums:", albums)
             images = [];
             videos = [];
+        }
+        if (customEvent.data.type == "random") {
+            console.log("Got random:", customEvent.data.text)
+            randomMode = customEvent.data.text == "true";
         }
         if (customEvent.data.type == "hiddenAlbums") {
             hiddenAlbums = JSON.parse(customEvent.data.text).map(albumId => ({id: albumId}));
@@ -221,7 +226,11 @@ function fetchNext(box) {
             })
             unPlayedVideos = videos;
         }
-        box.nextMedia = _.sample(unPlayedVideos)
+        if (randomMode) {
+            box.nextMedia = _.sample(unPlayedVideos)
+        } else {
+            box.nextMedia = unPlayedVideos[0] || null;
+        }
     } else {
         // Get image
         let unPlayedImages = images.filter(mediaItem => !mediaItem.played)
@@ -232,7 +241,11 @@ function fetchNext(box) {
             })
             unPlayedImages = images;
         }
-        box.nextMedia = _.sample(unPlayedImages)
+        if (randomMode) {
+            box.nextMedia = _.sample(unPlayedImages)
+        } else {
+            box.nextMedia = unPlayedImages[0] || null;
+        }
     }
     if (box.nextMedia) {
         box.nextMedia.played = true;
