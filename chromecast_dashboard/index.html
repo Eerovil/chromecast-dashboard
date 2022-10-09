@@ -92,6 +92,7 @@ var fetchPageTimeout = null;
 var player = document.querySelector("#castMediaElement")
 var infoBox = document.querySelector("#infobox")
 var pixelsLeft = 0;  // How many pixels are left for the left side.
+var lastDate = new Date();
 
 
 function updatePixelsLeft(rightWidth) {
@@ -162,6 +163,11 @@ if (window.location.href.indexOf('localhost') == -1) {
                     box.currMedia.error = "skip";
                 }
             }
+        }
+        if (customEvent.data.type == "lastDate") {
+            infoBoxLog("Got lastDate:", customEvent.data.text);
+            lastDate = new Date(customEvent.data.text);
+            window.resetData();
         }
     });
     // Cast api will automatically use castMediaElement as player
@@ -377,9 +383,30 @@ function fetchPage() {
             continue;
         }
         if (album.id === "allMedia") {
-            const pageTokenQuery = !!album.pageToken ? `&pageToken=${album.pageToken}` : '';
-            axiosPromise = axios.get(
-                `https://photoslibrary.googleapis.com/v1/mediaItems?pageSize=100${pageTokenQuery}`,
+            axiosPromise = axios.post(
+                'https://photoslibrary.googleapis.com/v1/mediaItems:search',
+                {
+                    "pageSize": "100",
+                    "pageToken": (album.pageToken || ""),
+                    "filters": {
+                        "dateFilter": {
+                            "ranges": [
+                                {
+                                    "startDate": {
+                                        "year": 1900,
+                                        "month": 1,
+                                        "day": 1
+                                    },
+                                    "endDate": {
+                                        "year": lastDate.getFullYear(),
+                                        "month": lastDate.getMonth() + 1,
+                                        "day": lastDate.getDate() + 1,
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                },
                 config
             )
         } else {
@@ -478,8 +505,12 @@ window.resetData = function() {
     fetchPage();
 }
 
-// empty arrays every 25min
-setTimeout(window.resetData, (25 * 60 * 1000))
+// empty arrays every 25min in random mode
+setTimeout(() => {
+    if (randomMode) {
+        window.resetData()
+    }
+}, (25 * 60 * 1000))
 
 };
 </script>
