@@ -105,7 +105,9 @@ function updatePixelsLeft(rightWidth) {
 
     const aspectRatio = (box.currMedia.mediaMetadata.width / box.currMedia.mediaMetadata.height);
     if ((window.innerHeight * aspectRatio) > pixelsLeft) {
-        box.currMedia.played = false; // Allow this to play later/next/whenever possible.
+        if (!box.currMedia.playedRight) {
+            box.currMedia.played = false; // Allow this to play later/next/whenever possible.
+        }
         document.querySelector("#left").style.display = 'none';
         console.log(`Hidden too wide left side img (${window.innerHeight * aspectRatio} > ${pixelsLeft})`)
     } else {
@@ -300,6 +302,9 @@ function fetchNext(box) {
     }
     if (box.nextMedia) {
         box.nextMedia.played = true;
+        if (box.id == "right") {
+            box.nextMedia.playedRight = true;
+        }
         preloadMediaItem(box)
     } else {
         setTimeout(() => fetchNext(box), 1000)
