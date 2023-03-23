@@ -109,7 +109,7 @@ function updatePixelsLeft(rightWidth) {
             box.currMedia.played = false; // Allow this to play later/next/whenever possible.
         }
         document.querySelector("#left").style.display = 'none';
-        console.log(`Hidden too wide left side img (${window.innerHeight * aspectRatio} > ${pixelsLeft})`)
+        console.log(`Hidden too wide left side img (${window.innerHeight * aspectRatio} > ${pixelsLeft})`, box)
     } else {
         document.querySelector("#left").style.display = 'block';
     }
