@@ -76,10 +76,6 @@ span.info {
 </div>
 <script>
 
-window.onload = function() {
-
-    window.context = this;
-
 var changeSecs = 10;
 var randomMode = true;
 var nextMedia;
@@ -90,12 +86,12 @@ var images = [];
 var videos = [];
 var hiddenMediaIds = new Set();
 var albums = [];
+var hiddenAlbums = [];
 var fetchPageTimeout = null;
-var player = document.querySelector("#castMediaElement")
-var infoBox = document.querySelector("#infobox")
+var player = null;
+var infoBox = null;
 var pixelsLeft = 0;  // How many pixels are left for the left side.
 var lastDate = new Date();
-
 
 function updatePixelsLeft(rightWidth) {
     if (rightWidth != undefined) {
@@ -126,67 +122,6 @@ function infoBoxLog(text) {
     }, 2000)
 }
 
-if (window.location.href.indexOf('localhost') == -1) {
-    const context = cast.framework.CastReceiverContext.getInstance();
-    context.addCustomMessageListener('urn:x-cast:com.eerovil.chromecast-dashboard', function (customEvent) {
-        if (customEvent.data.type == "message") {
-            document.getElementById("message").innerHTML = customEvent.data.text;
-            if (customEvent.data.text && customEvent.data.text.startsWith('https')) {
-                baseUrl = customEvent.data.text;
-                log("baseUrl updated to " + baseUrl)
-            }
-        }
-        if (customEvent.data.type == "apiToken") {
-            infoBoxLog("Got api token!")
-            apiToken = customEvent.data.text;
-        }
-        if (customEvent.data.type == "albums") {
-            albums = JSON.parse(customEvent.data.text).map(albumId => ({id: albumId}));
-            infoBoxLog("Got albums:", albums)
-            images = [];
-            videos = [];
-        }
-        if (customEvent.data.type == "random") {
-            infoBoxLog("Got random:", customEvent.data.text)
-            randomMode = customEvent.data.text == "true";
-        }
-        if (customEvent.data.type == "hiddenAlbums") {
-            hiddenAlbums = JSON.parse(customEvent.data.text).map(albumId => ({id: albumId}));
-            infoBoxLog("Got hiddenAlbums:", hiddenAlbums)
-            hiddenMediaIds = new Set();
-        }
-        if (customEvent.data.type == "timeout") {
-            infoBoxLog("Got timeout:", customEvent.data.text)
-            changeSecs = parseInt(customEvent.data.text) || 10
-        }
-        if (customEvent.data.type == "skip") {
-            infoBoxLog("Got skip")
-            // Set "error" for both boxes
-            for (const box of boxes) {
-                if (box.currMedia) {
-                    box.currMedia.error = "skip";
-                }
-            }
-        }
-        if (customEvent.data.type == "lastDate") {
-            infoBoxLog("Got lastDate:", customEvent.data.text);
-            lastDate = new Date(customEvent.data.text);
-            window.resetData();
-        }
-    });
-    // Cast api will automatically use castMediaElement as player
-    const playerManager = context.getPlayerManager();
-
-    const playerData = {};
-    const playerDataBinder = new cast.framework.ui.PlayerDataBinder(playerData);
-
-    const options = new cast.framework.CastReceiverOptions();
-
-    options.disableIdleTimeout = true;
-
-    context.start(options);
-}
-
 function log(message) {
     try {
         if (message.indexOf(' left') > -1) {
@@ -201,8 +136,6 @@ function log(message) {
 function errorHandler(msg, url, lineNo, columnNo, error) {
     log("Error! " + msg + " " + url + " " + lineNo)
 }
-
-window.onerror = errorHandler;
 
 function initBoxes() {
     boxes = [
@@ -473,6 +406,93 @@ function fetchPage() {
     }
     // Wait longer for multiple albums to keep quota better
     fetchPageTimeout = setTimeout(fetchPage, 10 * 1000 * albums.length);
+}
+
+window.onload = function() {
+
+player = document.querySelector("#castMediaElement")
+infoBox = document.querySelector("#infobox")
+
+
+if (window.location.href.indexOf('localhost') == -1) {
+    const context = cast.framework.CastReceiverContext.getInstance();
+    context.addCustomMessageListener('urn:x-cast:com.eerovil.chromecast-dashboard', function (customEvent) {
+        if (customEvent.data.type == "message") {
+            document.getElementById("message").innerHTML = customEvent.data.text;
+            if (customEvent.data.text && customEvent.data.text.startsWith('https')) {
+                baseUrl = customEvent.data.text;
+                log("baseUrl updated to " + baseUrl)
+            }
+        }
+        if (customEvent.data.type == "apiToken") {
+            infoBoxLog("Got api token!")
+            apiToken = customEvent.data.text;
+        }
+        if (customEvent.data.type == "albums") {
+            albums = JSON.parse(customEvent.data.text).map(albumId => ({id: albumId}));
+            infoBoxLog("Got albums:", albums)
+            images = [];
+            videos = [];
+        }
+        if (customEvent.data.type == "random") {
+            infoBoxLog("Got random:", customEvent.data.text)
+            randomMode = customEvent.data.text == "true";
+        }
+        if (customEvent.data.type == "hiddenAlbums") {
+            hiddenAlbums = JSON.parse(customEvent.data.text).map(albumId => ({id: albumId}));
+            infoBoxLog("Got hiddenAlbums:", hiddenAlbums)
+            hiddenMediaIds = new Set();
+        }
+        if (customEvent.data.type == "timeout") {
+            infoBoxLog("Got timeout:", customEvent.data.text)
+            changeSecs = parseInt(customEvent.data.text) || 10
+        }
+        if (customEvent.data.type == "skip") {
+            infoBoxLog("Got skip")
+            // Set "error" for both boxes
+            for (const box of boxes) {
+                if (box.currMedia) {
+                    box.currMedia.error = "skip";
+                }
+            }
+        }
+        if (customEvent.data.type == "lastDate") {
+            infoBoxLog("Got lastDate:", customEvent.data.text);
+            lastDate = new Date(customEvent.data.text);
+            window.resetData();
+        }
+    });
+    // Cast api will automatically use castMediaElement as player
+    const playerManager = context.getPlayerManager();
+
+    const playerData = {};
+    const playerDataBinder = new cast.framework.ui.PlayerDataBinder(playerData);
+
+    const options = new cast.framework.CastReceiverOptions();
+
+    options.disableIdleTimeout = true;
+
+    context.start(options);
+}
+
+window.onerror = errorHandler;
+
+// Try to parse api token from query params
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.get('apiToken')) {
+    apiToken = urlParams.get('apiToken');
+}
+if (urlParams.get('albums')) {
+    albums = (urlParams.get('albums') || '').split(',').map(albumId => ({id: albumId}));
+}
+if (urlParams.get('hiddenAlbums')) {
+    hiddenAlbums = (urlParams.get('albums') || '').split(',').map(albumId => ({id: albumId}));
+}
+if (urlParams.get('timeout')) {
+    changeSecs = parseInt(urlParams.get('timeout')) || 10;
+}
+if (urlParams.get('lastDate')) {
+    lastDate = new Date(urlParams.get('lastDate'));
 }
 
 waitForApiToken = new Promise((resolve, reject) => {
