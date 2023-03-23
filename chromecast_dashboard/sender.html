@@ -49,7 +49,8 @@
     margin: 25px;
     height: 50px;
     width: 100px;
-    ">random mode</input>
+    "
+    checked>random mode</input>
 
     <button id="skip-media" style="
     margin: 25px;
@@ -174,6 +175,15 @@
         castSession.sendMessage('urn:x-cast:com.eerovil.chromecast-dashboard', {
           type: "hiddenAlbums",
           text: JSON.stringify(albumsToHide),
+        });
+        castSession.sendMessage('urn:x-cast:com.eerovil.chromecast-dashboard', {
+          type: "random",
+          text: $('#set-random:checked').val() ? "true" : "false",
+        });
+        const lastDate = new Date($('#set-lastdate').val()).toISOString()
+        castSession.sendMessage('urn:x-cast:com.eerovil.chromecast-dashboard', {
+          type: "lastDate",
+          text: lastDate,
         });
       }
     })

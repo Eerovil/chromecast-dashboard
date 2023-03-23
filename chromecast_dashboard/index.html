@@ -78,6 +78,8 @@ span.info {
 
 window.onload = function() {
 
+    window.context = this;
+
 var changeSecs = 10;
 var randomMode = true;
 var nextMedia;
@@ -280,6 +282,8 @@ function fetchNext(box) {
     } else {
         // Get image
         let unPlayedImages = images.filter(mediaItem => !mediaItem.played)
+        console.log("images: ", images)
+        console.log("unPlayedImages: ", unPlayedImages)
         if (unPlayedImages.length == 0 && images.length > 0) {
             console.log("All images played, resetting.")
             images.forEach(mediaItem => {
@@ -292,6 +296,7 @@ function fetchNext(box) {
         } else {
             box.nextMedia = unPlayedImages[0] || null;
         }
+        console.log("box.nextMedia: ", box.nextMedia)
     }
     if (box.nextMedia) {
         box.nextMedia.played = true;
