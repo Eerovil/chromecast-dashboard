@@ -225,6 +225,13 @@ function fetchNext(box) {
                         return true;
                     }
                 })
+                images.findIndex((mediaItem, index) => {
+                    if (mediaItem.id == box.currMedia.id) {
+                        images.splice(index, 1);
+                        console.log("deleted image at index ", index)
+                        return true;
+                    }
+                })
             }
             box.nextMedia = unPlayedVideos[0] || null;
         }
@@ -261,6 +268,13 @@ function fetchNext(box) {
                     if (mediaItem.id == box.currMedia.id) {
                         images.splice(index, 1);
                         console.log("deleted image at index ", index)
+                        return true;
+                    }
+                })
+                videos.findIndex((mediaItem, index) => {
+                    if (mediaItem.id == box.currMedia.id) {
+                        videos.splice(index, 1);
+                        console.log("deleted video at index ", index)
                         return true;
                     }
                 })
