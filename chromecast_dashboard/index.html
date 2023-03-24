@@ -481,7 +481,7 @@ function fetchPage() {
         })
     }
     // Wait longer for multiple albums to keep quota better
-    fetchPageTimeout = setTimeout(fetchPage, 10 * 1000 * albums.length);
+    fetchPageTimeout = setTimeout(fetchPage, 10 * 1000 * (albums.length + 1));
 }
 
 window.onload = function() {
