@@ -375,7 +375,10 @@ function fetchPage() {
     console.log(albums)
     if (images.length > 1000) {
         console.log("Pausing image fetch, more than 5000")
-        setTimeout(fetchPage, 1000 * 60 * 1)
+        if (fetchPageTimeout){
+            clearTimeout(fetchPageTimeout)
+        }
+        fetchPageTimeout = setTimeout(fetchPage, 1000 * 60 * 1)
         return;
     }
     for (const album of albums) {
@@ -481,6 +484,9 @@ function fetchPage() {
         })
     }
     // Wait longer for multiple albums to keep quota better
+    if (fetchPageTimeout){
+        clearTimeout(fetchPageTimeout)
+    }
     fetchPageTimeout = setTimeout(fetchPage, 10 * 1000 * (albums.length + 1));
 }
 
@@ -589,6 +595,9 @@ waitForApiToken.then(() => {
         fetchNext(box)
     }
     mainLoop()
+    if (fetchPageTimeout){
+        clearTimeout(fetchPageTimeout)
+    }
     fetchPage()
 })
 
