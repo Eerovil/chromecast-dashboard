@@ -203,9 +203,20 @@ function preloadMediaItem(box) {
 
 function fetchNext(box) {
     box.nextMedia = null;
+    let currentTime = null;
+    if (!randomMode && box.currMedia) {
+        currentTime = new Date(box.currMedia.mediaMetadata.creationTime);
+    }
     if (box.id == "right" && box.currMedia && box.currMedia.mimeType.match(/^image/)) {
         // Get video
         let unPlayedVideos = videos.filter(mediaItem => !mediaItem.played)
+        if (currentTime) {
+            // Only allow media that is before the current media.
+            unPlayedVideos = unPlayedVideos.filter(mediaItem => {
+                const mediaTime = new Date(mediaItem.mediaMetadata.creationTime);
+                return mediaTime < currentTime;
+            })
+        }
         if (unPlayedVideos.length == 0 && videos.length > 0) {
             console.log("All videos played, resetting.")
             videos.forEach(mediaItem => {
@@ -240,6 +251,13 @@ function fetchNext(box) {
         let unPlayedImages = images.filter(mediaItem => !mediaItem.played)
         console.log("images: ", images)
         console.log("unPlayedImages: ", unPlayedImages)
+        if (currentTime) {
+            // Only allow media that is before the current media.
+            unPlayedVideos = unPlayedVideos.filter(mediaItem => {
+                const mediaTime = new Date(mediaItem.mediaMetadata.creationTime);
+                return mediaTime < currentTime;
+            })
+        }
         if (unPlayedImages.length == 0 && images.length > 0) {
             console.log("All images played, resetting.")
             images.forEach(mediaItem => {
@@ -373,8 +391,9 @@ function fetchPage() {
         headers: { Authorization: `Bearer ${apiToken}` }
     };
     console.log(albums)
-    if (images.length > 1000) {
-        console.log("Pausing image fetch, more than 5000")
+    const maxImages = (randomMode ? 1000 : 100)
+    if (images.length >= maxImages) {
+        console.log("Pausing image fetch, more than " + maxImages)
         if (fetchPageTimeout){
             clearTimeout(fetchPageTimeout)
         }
