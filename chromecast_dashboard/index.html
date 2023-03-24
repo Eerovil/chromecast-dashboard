@@ -366,6 +366,9 @@ function mainLoop() {
 
 function fetchPage() {
     // Fetch a single page from all albums, then wait a bit and do it again.
+    if (!apiToken) {
+        return;
+    }
     const config = {
         headers: { Authorization: `Bearer ${apiToken}` }
     };
@@ -434,6 +437,16 @@ function fetchPage() {
                     images.push(mediaItem)
                 }
             }
+        }).catch(err => {
+            let errMsg = err;
+            try {
+                errMsg = JSON.stringify(err)
+            } catch (err) {
+                console.log(err)
+            }
+            apiToken = null;
+            window.resetData();
+            document.querySelector('#message').innerHTML = "Error: " + errMsg;
         })
     }
     for (const album of hiddenAlbums) {
@@ -457,6 +470,16 @@ function fetchPage() {
             for (const mediaItem of resp.data.mediaItems) {
                 hiddenMediaIds.add(mediaItem.id)
             }
+        }).catch(err => {
+            let errMsg = err;
+            try {
+                errMsg = JSON.stringify(err)
+            } catch (err) {
+                console.log(err)
+            }
+            apiToken = null;
+            window.resetData();
+            document.querySelector('#message').innerHTML = "Error: " + errMsg;
         })
     }
     // Wait longer for multiple albums to keep quota better
