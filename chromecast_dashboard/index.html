@@ -181,7 +181,9 @@ function buildFullUrl(mediaItem) {
 function preloadMediaItem(box) {
     if (box.nextMedia.mimeType.indexOf('image/') === 0) {
         (new Image()).src = buildFullUrl(box.nextMedia);
-        box.nextMediaReady = true;
+        setTimeout(() => {
+            box.nextMediaReady = true;
+        }, 1000)
         log("Box " + box.id + " (image) nextMedia = " + box.nextMedia.id)
     } else if (box.nextMedia.mimeType.indexOf('video/') === 0) {
         // Load video in background
@@ -190,10 +192,11 @@ function preloadMediaItem(box) {
         player.setAttribute('src', box.nextMedia.baseUrl + "=dv")
         player.setAttribute('type', box.nextMedia.mimeType)
         player.load()
-        box.nextMediaReady = true;
+        setTimeout(() => {
+            box.nextMediaReady = true;
+        }, 1000)
         const nextMediaId = box.nextMedia.id
         log("Box " + box.id + " (video) nextMedia = " + nextMediaId)
-
     }
 }
 
@@ -239,7 +242,7 @@ function fetchNext(box) {
         if (box.id == "left") {
             // Try to get images with aspect ratio close to 1:2
             const tallUnPlayedImages = unPlayedImages.filter(
-                mediaItem => mediaItem.mediaMetadata.width < mediaItem.mediaMetadata.height
+                mediaItem => mediaItem.mediaMetadata.width / mediaItem.mediaMetadata.height > 1.2
             )
             if (tallUnPlayedImages.length > 0) {
                 unPlayedImages = tallUnPlayedImages;
@@ -352,6 +355,7 @@ function fetchPage() {
     if (images.length > 5000) {
         console.log("Pausing image fetch, more than 5000")
         setTimeout(fetchPage, 1000 * 60 * 1)
+        return;
     }
     for (const album of albums) {
         let axiosPromise;
