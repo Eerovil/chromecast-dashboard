@@ -243,7 +243,7 @@ function fetchNext(box) {
         if (box.id == "left") {
             // Try to get images with aspect ratio close to 1:2
             const tallUnPlayedImages = unPlayedImages.filter(
-                mediaItem => mediaItem.mediaMetadata.width / mediaItem.mediaMetadata.height > 1.2
+                mediaItem => parseInt(mediaItem.mediaMetadata.height) / parseInt(mediaItem.mediaMetadata.width) > 1.2
             )
             if (tallUnPlayedImages.length > 0) {
                 unPlayedImages = tallUnPlayedImages;
