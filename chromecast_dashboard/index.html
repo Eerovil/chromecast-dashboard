@@ -212,6 +212,14 @@ function fetchNext(box) {
         if (randomMode) {
             box.nextMedia = _.sample(unPlayedVideos)
         } else {
+            // Delete previous media
+            videos.findIndex((mediaItem, index) => {
+                if (mediaItem.id == box.nextMedia.id) {
+                    videos.splice(index, 1);
+                    console.log("deleted video at index ", index)
+                    return true;
+                }
+            })
             box.nextMedia = unPlayedVideos[0] || null;
         }
     } else {
@@ -226,9 +234,28 @@ function fetchNext(box) {
             })
             unPlayedImages = images;
         }
+        if (box.id == "left") {
+            // Try to get images with aspect ratio close to 1:2
+            const tallUnPlayedImages = unPlayedImages.filter(
+                mediaItem => mediaItem.mediaMetadata.width < mediaItem.mediaMetadata.height
+            )
+            if (tallUnPlayedImages.length > 0) {
+                unPlayedImages = tallUnPlayedImages;
+            }
+        }
         if (randomMode) {
             box.nextMedia = _.sample(unPlayedImages)
         } else {
+            // Delete previous media
+            if (box.nextMedia.played) {
+                images.findIndex((mediaItem, index) => {
+                    if (mediaItem.id == box.nextMedia.id) {
+                        images.splice(index, 1);
+                        console.log("deleted image at index ", index)
+                        return true;
+                    }
+                })
+            }
             box.nextMedia = unPlayedImages[0] || null;
         }
         console.log("box.nextMedia: ", box.nextMedia)
@@ -255,7 +282,7 @@ function mainLoop() {
             if (videoLength > (60 * 5)) {
                 videoLength = (60 * 1)  // Show only 1 min of over 5 min videos
             }
-            if (videoLength < 3) {
+            if (videoLength < 5) {
                 // Too short video, mark as played asap
                 shouldChange = true;
             }
@@ -321,8 +348,8 @@ function fetchPage() {
     };
     console.log(albums)
     if (images.length > 5000) {
-        console.log("Stopping image fetch, more than 5000")
-        return;
+        console.log("Pausing image fetch, more than 5000")
+        setTimeout(fetchPage, 1000 * 60 * 1)
     }
     for (const album of albums) {
         let axiosPromise;
