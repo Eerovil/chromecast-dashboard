@@ -213,13 +213,15 @@ function fetchNext(box) {
             box.nextMedia = _.sample(unPlayedVideos)
         } else {
             // Delete previous media
-            videos.findIndex((mediaItem, index) => {
-                if (mediaItem.id == box.nextMedia.id) {
-                    videos.splice(index, 1);
-                    console.log("deleted video at index ", index)
-                    return true;
-                }
-            })
+            if (box.currMedia) {
+                videos.findIndex((mediaItem, index) => {
+                    if (mediaItem.id == box.currMedia.id) {
+                        videos.splice(index, 1);
+                        console.log("deleted video at index ", index)
+                        return true;
+                    }
+                })
+            }
             box.nextMedia = unPlayedVideos[0] || null;
         }
     } else {
@@ -247,9 +249,9 @@ function fetchNext(box) {
             box.nextMedia = _.sample(unPlayedImages)
         } else {
             // Delete previous media
-            if (box.nextMedia.played) {
+            if ((box.currMedia || {}).played) {
                 images.findIndex((mediaItem, index) => {
-                    if (mediaItem.id == box.nextMedia.id) {
+                    if (mediaItem.id == box.currMedia.id) {
                         images.splice(index, 1);
                         console.log("deleted image at index ", index)
                         return true;
