@@ -444,9 +444,8 @@ function fetchPage() {
             } catch (err) {
                 console.log(err)
             }
+            console.log("Error fetching page: ", errMsg)
             apiToken = null;
-            window.resetData();
-            document.querySelector('#message').innerHTML = "Error: " + errMsg;
         })
     }
     for (const album of hiddenAlbums) {
@@ -477,9 +476,8 @@ function fetchPage() {
             } catch (err) {
                 console.log(err)
             }
+            console.log("Error fetching page: ", errMsg)
             apiToken = null;
-            window.resetData();
-            document.querySelector('#message').innerHTML = "Error: " + errMsg;
         })
     }
     // Wait longer for multiple albums to keep quota better
