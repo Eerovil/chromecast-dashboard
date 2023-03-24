@@ -255,6 +255,10 @@ function mainLoop() {
             if (videoLength > (60 * 5)) {
                 videoLength = (60 * 1)  // Show only 1 min of over 5 min videos
             }
+            if (videoLength < 3) {
+                // Too short video, mark as played asap
+                shouldChange = true;
+            }
             shouldChange = shouldChange && elapsed > videoLength;
         }
         const hasError = (box.currMedia || {}).error
